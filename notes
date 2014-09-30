@@ -1,0 +1,28 @@
+Special Forms like (define x 3) are an exception to the general evaluation rule, as it oesn't
+evaluate to something that just depends on the value of x and 3 (x has no value)
+
+applicative-order evaluation -- eagerly evaluate all parameters*before* expanding the procedure definition. (what lisp actually does)
+
+normal-order evaluation -- expand procedure definition first. only evaluate when the actual argument values are needed. Lazy evaluation, in other words. effective outcome: expand everything until you get an operation involving only primitive types, then evaluate.
+
+Control flow
+- (cond (<p> <e> <e> ...) (<p> <e>) (else <e>) ... ) -- last expression in sequence returned
+- (if <p> <e if true> <e if false>)
+- and, or, not -- and & or short circut, which means they're special forms, not procedures
+
+Linear recursive process -- length of chain of deferred operations is linear with number of steps.
+
+iterative process -- all we need to keep track of are the current values of the parameters.
+State at any point is summarised by a fixed number of state variables. I.e. don't need any
+hidden info (like the interpreter stack for a recursive process..)
+
+A recursive procedure is the syntactic fact that it calls itself. That may or may not result in
+a recursive *process*. (tail-call-optimisable <=> it does not, the process is inherently iterative)
+
+Tree recursion -- fn calls itself more than once. (Will definitly be a recursive process). E.g. fib.
+ - Space-complexity: height of the tree (e.g. for fib, linear -- when computing fib(n) need to keep track of values of fib(0) through fib(n-1))
+ - Time-complexity: no. of nodes in the tree (e.g. for fib, exponential)
+
+(for fib, much better to use the iterative process! question -- is this equivalent to memoizing the recursive one?)
+
+
