@@ -23,6 +23,6 @@ Tree recursion -- fn calls itself more than once. (Will definitly be a recursive
  - Space-complexity: height of the tree (e.g. for fib, linear -- when computing fib(n) need to keep track of values of fib(0) through fib(n-1))
  - Time-complexity: no. of nodes in the tree (e.g. for fib, exponential)
 
-(for fib, much better to use the iterative process! question -- is this equivalent to memoizing the recursive one?)
+(for fib, much better to use the iterative process! question -- is this equivalent to memoizing the recursive one? (in terms of time-complexity), I mean - obviously not equivalent in terms of needing a stack)
 
 
