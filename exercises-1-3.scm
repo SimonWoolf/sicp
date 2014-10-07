@@ -84,6 +84,7 @@
                (accumulate combiner identity f (next a) next b))
       ))
 
+; Started using labda early, it's too useful, sorry :)
 (define (product f a next b)
   (accumulate (lambda (x y) (* x y)) 1 f a next b))
 
@@ -97,3 +98,34 @@
       (iter (next x) (combiner result (f x)))))
    (iter a identity)
   )
+
+; 1.33
+
+(define (filtered-accumulate combiner filter identity f a next b)
+  (if (> a b)
+      identity
+      (combiner (if (filter a)
+                    (f a)
+                    identity)
+                (filtered-accumulate combiner filter identity f (next a) next b))
+      ))
+
+; sum of primes from a to b, assuming a prime? fn:
+(filtered-accumulate (lambda (x y) (+ x y))
+                     (lambda (x) (prime? x))
+                     0
+                     (lambda (x) (* x x))
+                     a
+                     (lambda (x) (+ x 1))
+                     b
+                     )
+
+; product of +ve integers x < n that have GCD(x,n) = 1:
+(filtered-accumulate (lambda (x y) (* x y))
+                     (lambda (x) (= 1 (gcd x n)))
+                     1
+                     (lambda (x) (* x x))
+                     1
+                     (lambda (x) (+ x 1))
+                     n
+                     )

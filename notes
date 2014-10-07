@@ -25,4 +25,25 @@ Tree recursion -- fn calls itself more than once. (Will definitly be a recursive
 
 (for fib, much better to use the iterative process! question -- is this equivalent to memoizing the recursive one? (in terms of time-complexity), I mean - obviously not equivalent in terms of needing a stack)
 
+-
 
+anonymous functions: (lambda (x y) <body>)
+
+let expressions:
+(let ((⟨var₁⟩ ⟨exp₁⟩)
+      (⟨var₂⟩ ⟨exp₂⟩)
+      …
+  ⟨body⟩)
+
+is syntactic sugar for:
+((lambda (⟨var₁⟩ … )
+   ⟨body⟩)
+ ⟨exp₁⟩
+ …
+ )
+
+i.e. if f(g(x), h(x)), let lets you define g and h first then define f in terms of it
+which is more intuitive than defining f as a lambda then applying it to expressions for
+g and h.
+
+warning: that means that you can't define let-exprs in terms of other let-exprs
