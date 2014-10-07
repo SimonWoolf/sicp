@@ -74,3 +74,26 @@
         result
         (iter (next x) (* result (f x)))))
   (iter a 1))
+
+; 1.32
+;
+(define (accumulate combiner identity f a next b)
+  (if (> a b)
+      identity
+      (combiner (f a)
+               (accumulate combiner identity f (next a) next b))
+      ))
+
+(define (product f a next b)
+  (accumulate (lambda (x y) (* x y)) 1 f a next b))
+
+(define (sum f a next b)
+  (accumulate (lambda (x y) (+ x y)) 0 f a next b))
+
+(define (accumulate-iter combiner identity f a next b)
+  (define (iter x result)
+    (if (> x b)
+      result
+      (iter (next x) (combiner result (f x)))))
+   (iter a identity)
+  )
