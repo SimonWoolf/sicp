@@ -43,3 +43,34 @@
         (iter (next x) (+ result (f x)))))
   (iter a 0))
 
+; NB excercise wanted to make you shadow a! is that really a good idea?
+
+; 1.31
+
+(define (product f a next b)
+  (if (> a b)
+      1
+      (* (f a)
+         (product f (next a) next b))))
+
+(define (fac n)
+  (product (lambda (x) x) 1 (lambda (x) (+ x 1)) n)
+  )
+
+(define (pi precision)
+  (define last-even (* precision 2))
+  (define (square x) (* x x))
+  (define (plus2 x) (+ 2 x))
+  (* 4
+     (/ (* 2 last-even (product square 4 plus2 (- last-even 1)))
+        (product square 3 plus2 last-even))
+  ))
+
+(exact->inexact (pi 80)) ; => 3.161288580501705
+
+(define (product-iter f a next b)
+  (define (iter x result)
+    (if (> x b)
+        result
+        (iter (next x) (* result (f x)))))
+  (iter a 1))
