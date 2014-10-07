@@ -9,7 +9,7 @@
 (define (integral f a b n)
   (define dx (/ (- b a) n))
   (define (add-dx x) (+ x dx))
-  (* (sigma f (+ a (/ dx 2.0)) add-dx b) 
+  (* (sigma f (+ a (/ dx 2.0)) add-dx b)
      dx))
 
 (define (simpsons-int f a b n)
@@ -33,3 +33,13 @@
 
 ; Even at n=10, error in simpsons is 0 for cube 0 to 1!
 ; odd..
+
+; 1.30
+
+(define (sigma-iter f a next b)
+  (define (iter x result)
+    (if (> x b)
+        result
+        (iter (next x) (+ result (f x)))))
+  (iter a 0))
+
