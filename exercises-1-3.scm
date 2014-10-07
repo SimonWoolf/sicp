@@ -129,3 +129,51 @@
                      (lambda (x) (+ x 1))
                      n
                      )
+
+; 1.34
+; I expect:
+(f f) => (f 2)
+=> (2 2)
+=> "error: expected procedure got integer"
+
+; 1.35
+; 1 + 1/((1 + sqrt(5))/2)
+;   = 1 + 2/(1 + sqrt(5))
+;   = 1 + 2(1 - sqrt(5))/(1 + sqrt(5))(1 - sqrt(5))
+;   = 1 + 2(1 - sqrt(5))/(-4)
+;   = 1 + (sqrt(5) - 1)/2
+;   = (1 + sqrt(5))/2
+
+; 1.36
+; x^x = 1000: x = 4.555532270803653
+; Starting with 2.0: 34 steps
+; With averaging: 9 steps
+
+; 1.37
+(define (cont-frac n d k)
+  (define (cont-frac-helper n d k i)
+    (if (> i k)
+        0
+        (/ (n i)
+           (+ (d i)
+              (cont-frac-helper n d k (+ i 1)))
+           )
+        )
+    )
+  (cont-frac-helper n d k 1)
+  )
+
+; need k=10 before I get 4d.p. accuracy -
+; 0.61797 = 0.6180 to 4 d.p.
+
+; iterative:
+(define (cont-frac n d k)
+  (define (cont-frac-iter n d k i result)
+    (if (= i 0)
+        result
+        (cont-frac-iter n d k (- i 1)
+                        (/ (n i) (+ (d i) result)))
+        )
+    )
+  (cont-frac-iter n d k k 0)
+  )

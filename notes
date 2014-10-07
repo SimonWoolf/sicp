@@ -31,7 +31,7 @@ anonymous functions: (lambda (x y) <body>)
 
 let expressions:
 (let ((⟨var₁⟩ ⟨exp₁⟩)
-      (⟨var₂⟩ ⟨exp₂⟩)
+      (⟨var₂⟩ ⟨exp₂⟩)) ;
       …
   ⟨body⟩)
 
