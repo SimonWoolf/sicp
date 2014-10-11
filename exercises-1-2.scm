@@ -44,7 +44,7 @@
 
 (define (f n) (* 2 n))
 (define (g n) (^ 2 n))
-(define (h n) ##TODO##)
+(define (h n) ##TODO##) -- tetration..?
 
 ; 1.11
 ; recursive:
