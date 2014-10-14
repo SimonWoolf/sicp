@@ -190,12 +190,11 @@
              30]]
 
 ; 1.39
-; DOESN'T WORK :(((
 [define [tan-cf x k]
   [define [tan-n i]
     [if [= i 1]
         x
-        [* x x]]]
+        [- [* x x]]]]
   [define [tan-d i]
     [- [* i 2] 1]]
   [exact->inexact
