@@ -177,3 +177,29 @@
     )
   (cont-frac-iter n d k k 0)
   )
+
+; 1.38
+[define [euler-d i]
+  [cond [[not [= 2 [modulo i 3]]] 1]
+        [else [* 2 [/ [+ i 1] 3]]]
+        ]]
+
+[exact->inexact
+   [cont-frac [λ [i] 1]
+             euler-d
+             30]]
+
+; 1.39
+; DOESN'T WORK :(((
+[define [tan-cf x k]
+  [define [tan-n i]
+    [if [= i 1]
+        x
+        [* x x]]]
+  [define [tan-d i]
+    [- [* i 2] 1]]
+  [exact->inexact
+    [cont-frac tan-n
+               tan-d
+               k]]
+  ]
