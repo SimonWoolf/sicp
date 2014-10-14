@@ -202,3 +202,48 @@
                tan-d
                k]]
   ]
+
+; 1.40
+[define [cubic a b c]
+  [lambda [x]
+    [+ [* x x x]
+       [* a x x]
+       [* b x]
+       c]
+  ]]
+
+; 1.41
+[define [double f]
+  [lambda [x] [f [f x]]]
+  ]
+
+; Predict: 13
+; Actual: 21! Oh, of course, it's applying [double double]
+; twice, for four doubles.
+
+; 1.42
+[define [compose f g]
+  [lambda [x] [f [g x]]]
+  ]
+
+1.43
+[define [repeated f n]
+  [if [= n 1]
+      f
+      [compose f [repeated f [- n 1]]]
+  ]]
+; NB all of these higher order fns you need to know the number of arguments, as to
+; define a lambda you need to list its formal params. Ways around that..?
+
+; 1.44
+[define [smoothed f]
+  [lambda [x]
+    [/ [+ [f [- x dx]]
+          [f x]
+          [f [+ x dx]]]
+       3]]
+  ]
+
+[define [nfold-smoothed f n]
+  [[repeated smoothed n] f]
+  ]
