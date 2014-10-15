@@ -247,3 +247,28 @@
 [define [nfold-smoothed f n]
   [[repeated smoothed n] f]
   ]
+
+; 1.46
+#lang racket
+[define [iterative-improve good-enough improve]
+  [define [improver guess]
+    [if [good-enough guess]
+      guess
+      [improver [improve guess]]
+      ]
+    ]
+  improver
+  ]
+
+[exact->inexact [[iterative-improve
+   [lambda [x] [< [abs [- [* x x] 5]] 0.00001]]
+   [lambda [x] [average x [/ 5 x]]]]
+   10]]
+; => 2.2360701085328496
+
+ [define [fixed-point-finder f initial-guess]
+   [exact->inexact [[iterative-improve
+                     [lambda [x] [close-enough? x [f x]]]
+                     f]
+                     initial-guess]
+  ]]
