@@ -47,3 +47,7 @@ which is more intuitive than defining f as a lambda then applying it to expressi
 g and h.
 
 warning: that means that you can't define let-exprs in terms of other let-exprs
+
+--
+
+(cons a b) makes a list. car gets the first, cdr the second.
