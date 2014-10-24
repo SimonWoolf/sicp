@@ -53,8 +53,8 @@
   [car [cdr [cdr rect]]]]
 [define [side4 rect]
   [car [cdr [cdr [cdr rect]]]]]
-        
-        
+
+
 [define [perim rect]
   [+ [length [side1 rect]]
      [length [side2 rect]]
@@ -75,3 +75,64 @@
              [square [- [x-point p]
                         [x-point q]]]]]
   ]]
+
+; 2.4
+
+;So:
+(car (cons x y)) => ((lambda (m) (m x y)) (lambda (p q) p))
+=> ((lambda (p q) p) x y)
+=> x
+
+; Corresponding cdr:
+(define (car z)
+  (z (lambda (p q) q)))
+
+; 2.5
+; 2 and 3 are coprime. So result true by uniqueness
+; of prime factorisation.
+
+[define [cons x y]
+  [* [expt 2 x] [expt 3 y]]]
+
+[define [num-divisions x a]
+  [define [numdiv-recur x a count]
+    [if [not [= 0 [modulo x a]]]
+        count
+        [numdiv-recur [/ x a] a [+ count 1]]
+    ]]
+  [numdiv-recur x a 0]]
+
+[define [car l]
+  [num-divisions l 2]]
+
+[define [cdr l]
+  [num-divisions l 3]]
+
+; 2.6
+
+[add-1 zero]
+=> (lambda (f) (lambda (x) (f (((lambda (f) (lambda (x) x)) f) x))))
+=> (lambda (f) (lambda (x) (f ((lambda (x) x) x))))
+=> (lambda (f) (lambda (x) (f x)))
+
+[add-1 [add-one zero]]
+=> (lambda (f) (lambda (x) (f (((lambda (f) (lambda (x) (f x))) f) x))))
+=> (lambda (f) (lambda (x) (f (lambda (x) (f x) x))))
+=> (lambda (f) (lambda (x) (f (f x))))
+
+; pattern: identified!
+; useful helper:
+[define [proc-to-int p]
+[[p [lambda [x] [+ x 1]]] 0]]
+
+; function composition give you *multiplcation*
+; very neatly. but not addition!
+[define [multiply a b]
+  [lambda [f] [a [b f]]]]
+
+; Addition.. hmm. This works, but it's **messy**.
+; There must be a church-idiomatic way!
+(define (plus a b)
+  [let [[n [+ [proc-to-int a]
+              [proc-to-int b]]]]
+  [lambda [f] [lambda [x] [[repeated f n] x]]]])
