@@ -136,3 +136,55 @@
   [let [[n [+ [proc-to-int a]
               [proc-to-int b]]]]
   [lambda [f] [lambda [x] [[repeated f n] x]]]])
+
+; 2.7 car, cdr
+
+; 2.8
+(define (sub-interval x y)
+  (make-interval (- (lower-bound x)
+                    (upper-bound y))
+                 (- (upper-bound x)
+                    (lower-bound y))))
+
+; 2.9
+; width(x + y) = width(x) + width(y)
+; width(x - y) = width(x) + width(y)
+;
+; width(x * y) can't be a fn of width(x) and width(y):
+; x = (-1,1), y = (-1,1) both have width 2
+; product has width 2
+; x = (0,2), y = (0,2) both have width 2
+; product has width 4
+
+; 2.10
+(if (and (< x 0) (> y 0))
+  (...))
+
+; 2.11
+; tiresome
+
+; 2.12
+(define (make-center-percent c p)
+  (make-center-width c (* c p 0.001)))
+
+(define (percent i)
+  (* 100 (/ (width i) (center i))))
+
+; 2.13
+; x(1 + d)y(1 + d)
+; = xy(1+d)^2
+; = xy(1 + d^2 + 2d)
+; ~= xy(1 + 2d) for small d
+
+; 2.14 - 2.16
+; Yes.
+; Our interval arithmetic has no concept of intervals being
+; 'the same', only equal. So e.g. if I do R1/R1, that should
+; be 1 no matter what the value of R1, but our arithmetic treats
+; the errors in R1 and R1 as being independent, even when
+; they're not. So ELA is correct.
+;
+; What we need is an interval arithmetic that has the concept
+; of how independent intervals are from each other.
+; I.e. 'covariance as well as variance'.
+; Not going to attempt this now.
