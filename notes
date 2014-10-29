@@ -51,3 +51,10 @@ warning: that means that you can't define let-exprs in terms of other let-exprs
 --
 
 (cons a b) makes a list. car gets the first, cdr the second.
+
+--
+
+Church numerals
+===============
+three is a threeifier, a thing that makes 'do f'
+into 'do f.f.f' (. = function composition).
