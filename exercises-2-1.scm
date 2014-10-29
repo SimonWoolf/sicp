@@ -137,6 +137,20 @@
               [proc-to-int b]]]]
   [lambda [f] [lambda [x] [[repeated f n] x]]]])
 
+; Edit: we did addition!
+[define [add a b]
+  [lambda [f] [lambda [x] [[a f] [[b f] x]]]]]
+
+;And power a, b is
+[lambda [f] [[b a] f]]]
+; i.e.
+[b a]
+
+; i.e. for three squared, in both places there was an f in
+; two there's now a 'three', i.e. a threeifier. so [three [three x]]
+; i.e. three squared
+
+
 ; 2.7 car, cdr
 
 ; 2.8
