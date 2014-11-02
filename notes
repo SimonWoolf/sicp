@@ -58,3 +58,44 @@ Church numerals
 ===============
 three is a threeifier, a thing that makes 'do f'
 into 'do f.f.f' (. = function composition).
+
+So addition: a + b -> \f -> ( \x -> a(f)( b(f)(x)) )
+(do the f's from b to x, then the f's from a)
+multiplication: a*b -> \f -> ( a(b(f)) )
+(each of the f's in b substitutes all the f's in a)
+(i.e. a.b where . = function composition)
+exponentiation: a^b -> (b(a))
+(each of the f's in b substitutes for a itself -- i.e.
+a 'threeifier')
+tetration: ...?
+
+lists
+=====
+
+(list ⟨a₁⟩ ⟨a₂⟩ … ⟨aₙ⟩) =
+(cons ⟨a₁⟩
+      (cons ⟨a₂⟩
+            (cons …
+                  (cons ⟨aₙ⟩
+                        nil)…)))
+
+(cadddr l) = (car (cdr (cdr (cdr l))))
+  = fourth element of l
+
+useful procedures:
+
+(define (length items)
+  (if (null? items)
+      0
+      (+ 1 (length (cdr items)))))
+(define (list-ref items n)
+  (if (= n 0)
+      (car items)
+      (list-ref (cdr items)
+                (- n 1))))
+(define (append list1 list2)
+  (if (null? list1)
+      list2
+      (cons (car list1)
+            (append (cdr list1)
+                    list2))))
