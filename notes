@@ -99,3 +99,19 @@ useful procedures:
       (cons (car list1)
             (append (cdr list1)
                     list2))))
+(define (last-pair l)
+  (if (null? (cdr l))
+      l
+      (last-pair (cdr l))))
+
+(define (reverse l)
+  (if (= 0 (length l))
+      '()
+      (append (reverse (cdr l))
+              (list (car l)))))
+
+-------
+
+dotted-tail notation - (define (g f . w) (...))
+is like def g(f, *w)
+
