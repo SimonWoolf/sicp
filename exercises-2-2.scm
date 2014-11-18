@@ -102,3 +102,13 @@
       (append (deep-reverse (cdr l))
               (list (deep-reverse (car l))))
       l))
+
+; 2.28
+; :'(
+; this just returns the thing you put it!
+(define (fringewrong l)
+  (define (fringe-iter l result)
+    (cond ((null? l) result)
+           ((pair? l) (fringe-iter (cdr l) (cons (fringe-iter (car l) result) result))
+          (fringe-iter null (cons l result)))))
+  (fringe-iter l null))
