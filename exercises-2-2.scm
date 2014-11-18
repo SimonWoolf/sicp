@@ -46,3 +46,59 @@
 
 ; will's suggestion: signature of same-parity-helper
 ; can just be (x y), so you don't have to use apply
+
+; 2.21
+(define (square-list items)
+  (if (null? items)
+      null
+      (cons (* (car items) (car items))
+            (square-list (cdr items)))))
+
+(define (square-list2 items)
+  (map (lambda (x) (* x x)) items))
+
+; 2.22
+; It takes things off the head of items list
+; and attaches them to the head of answer list
+; [1 2 3,] -> [2 3, 1] -> [3, 2 1] -> [,3 2 1]
+; The other way
+; produces a left-folded rather than a right-folded
+; list.
+; i.e. ((((), 1), 2), 3), 4) rather than (1, (2, (3, (4, ()))))
+
+; 2.23
+(define (for-each proc l)
+  (if (null? l)
+      null
+      (begin
+        (proc (car l))
+        (for-each proc (cdr l)))))
+
+; 2.24
+;   /\
+;  1 /\
+;   /\ o
+;  2 /\
+;   /\ o
+;  3 /\
+;   4  o
+
+; 2.25
+; d d a d a
+; a a
+; d a d a d a d a d a d a
+
+; 2.26
+(append x y) ;=>
+'(1 2 3 4 5 6)
+(cons x y) ;=>
+'((1 2 3) 4 5 6)
+(list x y) ;=>
+'((1 2 3) (4 5 6))
+
+; 2.27
+(define (deep-reverse l)
+  (if (pair? l)
+      (append (deep-reverse (cdr l))
+              (list (deep-reverse (car l))))
+      l))
