@@ -196,3 +196,13 @@
   (tree-map square tree))
 
 (define (square x) (* x x))
+
+; 2.32
+(define (subsets s)
+  (if (null? s)
+      (list nil)
+      (let ((rest (subsets (cdr s))))
+        (append rest (map (lambda (subset) (cons (car s) subset))
+                          rest)))))
+; subsets of (x U S) = {{} U {x} U_{T subset S} {x U T}}
+; the {x} comes out of the null element of rest
