@@ -222,3 +222,16 @@
 
 (define (length sequence)
   (accumulate (lambda (item acc) (+ 1 acc)) 0 sequence))
+
+; 2.34
+; This always returns x * the answer!
+; could divide by x, but that'd not be in the q template
+; need to not * by x in the leftmost iteration, but the
+; lambda doesn't know what iteration it's in...
+(define
+  (horner-eval x coefficient-sequence)
+  (accumulate
+   (lambda (this-coeff higher-terms)
+     (* x (+ this-coeff higher-terms)))
+   0
+   coefficient-sequence))
