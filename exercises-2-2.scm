@@ -161,3 +161,22 @@
     (if (has-submobiles? structure)
        (balanced? structure)
        true)))
+
+; part 4: need to change little, only s/cadr/cdr in
+(define right-branch cadr)
+(define branch-structure cadr)
+
+; 2.30
+(define (square-tree tree)
+  (cond ((null? tree) null)
+        ((list? tree)
+         (cons (square-tree (car tree))
+               (square-tree (cdr tree))))
+        (else (* tree tree))))
+
+(define (square-tree tree)
+  (map (lambda (sub-tree)
+         (if (list? sub-tree)
+             (square-tree sub-tree)
+             (* sub-tree sub-tree)))
+       tree))
