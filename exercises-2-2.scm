@@ -112,3 +112,31 @@
            ((pair? l) (fringe-iter (cdr l) (cons (fringe-iter (car l) result) result))
           (fringe-iter null (cons l result)))))
   (fringe-iter l null))
+
+; 2.29
+(define (make-mobile left right)
+  (list left right))
+
+(define (make-branch length structure)
+  (list length structure))
+
+(define left-branch car)
+(define right-branch cadr)
+(define branch-length car)
+(define branch-structure cadr)
+
+(define example-mobile
+  (make-mobile (make-branch 5 2)
+               (make-branch 3 (make-mobile (make-branch 2 6)
+                                           (make-branch 1 (make-mobile (make-branch 2 1)
+                                                                       (make-branch 4 3)))))))
+
+(define (total-weight mobile)
+  (define (total-branch-weight branch)
+    (let ((structure (branch-structure branch)))
+      (if (list? structure)
+          (total-weight structure)
+          structure)
+      ))
+  (+  (total-branch-weight (left-branch mobile))
+      (total-branch-weight (right-branch mobile))))
