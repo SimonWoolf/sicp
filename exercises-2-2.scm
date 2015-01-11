@@ -180,3 +180,19 @@
              (square-tree sub-tree)
              (* sub-tree sub-tree)))
        tree))
+
+; 2.31
+; Note: map takes a function of 1 argument
+; but that's ok as the lambda closes over the
+; definition of proc
+(define (tree-map proc tree)
+  (map (lambda (sub-tree)
+         (if (list? sub-tree)
+             (tree-map proc sub-tree)
+             (proc sub-tree)))
+       tree))
+
+(define (square-tree tree)
+  (tree-map square tree))
+
+(define (square x) (* x x))
