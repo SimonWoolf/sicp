@@ -113,6 +113,9 @@
           (fringe-iter null (cons l result)))))
   (fringe-iter l null))
 
+; Note: stop trying to do clever thigns and just use append....
+; see enumerate-tree
+
 ; 2.29
 (define (make-mobile left right)
   (list left right))
@@ -206,3 +209,16 @@
                           rest)))))
 ; subsets of (x U S) = {{} U {x} U_{T subset S} {x U T}}
 ; the {x} comes out of the null element of rest
+
+; 2.33
+(define (map p sequence)
+  (accumulate (lambda (item acc) (cons (p item) acc))
+              null sequence))
+
+; note the order swapped! accumulate is cons-ing things
+; car'd from seq1 onto the accumulator
+(define (append seq1 seq2)
+  (accumulate cons seq2 seq1))
+
+(define (length sequence)
+  (accumulate (lambda (item acc) (+ 1 acc)) 0 sequence))
