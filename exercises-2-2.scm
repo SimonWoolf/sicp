@@ -142,3 +142,22 @@
 (define (total-weight mobile)
   (+  (total-branch-weight (left-branch mobile))
       (total-branch-weight (right-branch mobile))))
+
+(define (torque branch)
+  (* (branch-length branch)
+     (total-branch-weight branch)))
+
+(define (balanced? mobile)
+  (and (equal? (torque (left-branch mobile))
+               (torque (right-branch mobile)))
+       (balanced-submobiles? mobile)))
+
+(define (balanced-submobiles? mobile)
+  (and (balanced-branch? (left-branch mobile))
+       (balanced-branch? (right-branch mobile))))
+
+(define (balanced-branch? branch)
+  (let ((structure (branch-structure branch)))
+    (if (has-submobiles? structure)
+       (balanced? structure)
+       true)))
