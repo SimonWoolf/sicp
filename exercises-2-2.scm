@@ -124,6 +124,7 @@
 (define right-branch cadr)
 (define branch-length car)
 (define branch-structure cadr)
+(define has-submobiles? list?)
 
 (define example-mobile
   (make-mobile (make-branch 5 2)
@@ -131,12 +132,13 @@
                                            (make-branch 1 (make-mobile (make-branch 2 1)
                                                                        (make-branch 4 3)))))))
 
+(define (total-branch-weight branch)
+  (let ((structure (branch-structure branch)))
+    (if (has-submobiles? structure)
+        (total-weight structure)
+        structure)
+    ))
+
 (define (total-weight mobile)
-  (define (total-branch-weight branch)
-    (let ((structure (branch-structure branch)))
-      (if (list? structure)
-          (total-weight structure)
-          structure)
-      ))
   (+  (total-branch-weight (left-branch mobile))
       (total-branch-weight (right-branch mobile))))
