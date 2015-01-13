@@ -283,3 +283,10 @@
     (map (lambda (m_i)
            (matrix-*-vector cols m_i))
          m)))
+
+; 2.38
+; see notes about argument combination order!
+(fold-right / 1 (list 1 2 3)) => 3/2
+(fold-left  / 1 (list 1 2 3)) => 1/6
+(fold-right list nil (list 1 2 3)) => '(1 (2 (3 null)'))
+(fold-left  list nil (list 1 2 3)) => '(((null 1) 2) 3)

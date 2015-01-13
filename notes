@@ -110,8 +110,29 @@ useful procedures:
       (append (reverse (cdr l))
               (list (car l)))))
 
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op
+                      initial
+                      (cdr sequence)))))
 -------
 
 dotted-tail notation - (define (g f . w) (...))
 is like def g(f, *w)
 
+-------
+
+Map, filter, accumulate -- the operator is the first argment, then initial (for acc), then last is the sequence.
+
+When building a list with map etc., use cons not list - it's done one element at a time (right-folding), so consing at each stage gives you a normal list structure
+
+right vs left fold:
+left-folding is like iteration - starting from the first element, combining it with the accumulator, then moving rightwards.
+right-folding is like recursion - still nominally starting with the first element, but the work is done on the way back down - once you've got to the last element you combine that with the acc and return that to the call one level up the stack.
+
+Default accumulate is right-fold. Lisp lists are right-folded with cons.
+
+Note: *they also combine their arguments in opposite order*! accumulate does (op item accumulator), fold-left does (op accumulator item)!
+(why? to maintain sequence order, I guess...? so e.g. (list 1 2) will be (1 op (2 op initial)) or ((initial op 1) op 2), but always 1 is on the left...)
