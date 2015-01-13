@@ -235,3 +235,28 @@
      (* x (+ this-coeff higher-terms)))
    0
    coefficient-sequence))
+
+; 2.35
+(define (count-leaves tree)
+  (accumulate (lambda (item acc)
+                (if (list? item)
+                    (+ acc (count-leaves (car item))
+                           (count-leaves (cdr item)))
+                    (+ acc 1)))
+              0
+              tree))
+; works, but not actually using accumulate in any kind
+; of elegant way, it's basically just doing the same as
+; the original definition. Also not using map.
+(define (count-leaves2 tree)
+  (accumulate (lambda (item acc)
+                    (+ acc 1))
+              0
+              (enumerate-tree tree)))
+; Still not using map though. What're they getting at
+; in this question? This maybe?
+(define (count-leaves tree)
+  (accumulate +
+              0
+              (map (lambda (leaf) 1)
+                   (enumerate-tree tree))))
