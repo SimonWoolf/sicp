@@ -290,3 +290,11 @@
 (fold-left  / 1 (list 1 2 3)) => 1/6
 (fold-right list nil (list 1 2 3)) => '(1 (2 (3 null)'))
 (fold-left  list nil (list 1 2 3)) => '(((null 1) 2) 3)
+
+; The property for fold-left and fold-right to be the same is associativity.
+; BUT -- unless the initial value is the identity element for the operation, you also need commutitivity, don't you, as the initial is in a different place....?
+; E.g. consider some operation like string concatenation that's associative but not commutitive
+> (accumulate string-append "init" (list "a" "b"))
+"abinit"
+> (fold-left string-append "init" (list "a" "b"))
+"initab"
