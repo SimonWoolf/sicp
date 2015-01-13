@@ -298,3 +298,31 @@
 "abinit"
 > (fold-left string-append "init" (list "a" "b"))
 "initab"
+; Is commutativity strong enough to guarantee that they'll produce the same values?
+; does commutativity imply associativity for binary operations? no! need both.
+; e.g.
+(foldl (lambda (item acc)
+         (/ (+ item acc) 2))
+       0
+       (list 1 2))
+
+1 1/4
+(foldr (lambda (item acc)
+         (/ (+ item acc) 2))
+       0
+       (list 1 2))
+1
+
+; 2.39
+(define (reverse sequence)
+  (foldr
+   (lambda (item acc)
+     (append acc (list item)))
+   null sequence))
+
+(define (reverse sequence)
+  (fold-left
+   (lambda (acc item) ; sodding reversed argument order!
+     (cons item acc))
+   null sequence))
+
