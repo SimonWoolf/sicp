@@ -260,3 +260,26 @@
               0
               (map (lambda (leaf) 1)
                    (enumerate-tree tree))))
+
+; 2.36
+; eeeasy!
+(define (accumulate-n op init seqs)
+  (if (null? (car seqs))
+      null
+      (cons (accumulate op init (map car seqs))
+            (accumulate-n op init (map cdr seqs)))))
+
+; 2.37
+(define (matrix-*-vector m v)
+  (map (lambda (m_i)
+         (dot-product m_i v))
+       m))
+
+(define (transpose mat)
+  (accumulate-n cons '() mat))
+
+(define (matrix-*-matrix m n)
+  (let ((cols (transpose n)))
+    (map (lambda (m_i)
+           (matrix-*-vector cols m_i))
+         m)))
