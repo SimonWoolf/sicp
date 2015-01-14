@@ -236,6 +236,9 @@
    0
    coefficient-sequence))
 
+; will points out: can just do this!
+     (+ (* x this-coeff) higher-terms)
+
 ; 2.35
 (define (count-leaves tree)
   (accumulate (lambda (item acc)
