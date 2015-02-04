@@ -372,3 +372,45 @@
   (filter
     sum-to-s?
     (unique-triplets n)))
+
+; 2.42
+(define (queens board-size)
+  (define (queen-cols k)
+    (if (= k 0)
+        (list empty-board)
+        (filter
+         (lambda (positions) ; each solution is a list of positions
+           (safe? k positions))
+         (flatmap ; maps each solution at k-1 to a list of board-size proposed solutions
+                  ; then flattens
+          (lambda (rest-of-queens)
+            (map (lambda (new-row)
+                   (adjoin-position ; adds the kth queen to the list of positions
+                    new-row
+                    k
+                    rest-of-queens))
+                 (enumerate-interval
+                  1
+                  board-size)))
+          (queen-cols (- k 1))))))
+  (queen-cols board-size))
+
+(define row car)
+(define col cadr)
+
+(define (safe? k positions)
+  (define proposed-queen (car positions))
+  (define other-queens (cdr positions))
+  (not (or (append
+   (map (lambda (other)
+         (= (row other) (row proposed-queen)))
+       other-queens)
+   (map (lambda (other)
+         (= (+ (col other) (row other))
+            (+ (col proposed-queen) (row proposed-queen))))
+        other-queens)
+   (map (lambda (other)
+         (= (- (col other) (row other))
+            (- (col proposed-queen) (row proposed-queen))))
+        other-queens)
+   ))))
