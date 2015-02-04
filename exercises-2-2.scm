@@ -329,3 +329,46 @@
      (cons item acc))
    null sequence))
 
+; 2.40
+; this is just method extraction...
+(define (unique-pairs n)
+  (flatmap
+    (lambda (i)
+      (map (lambda (j)
+             (list i j))
+           (enumerate-interval
+             1
+             (- i 1))))
+    (enumerate-interval 1 n)))
+
+(define (prime-sum-pairs n)
+  (map make-pair-sum
+       (filter
+        prime-sum?
+        (unique-pairs n))))
+
+; 2.41
+; unique-pairs but with the inside 'list i j'
+; replaced by the j
+; can we abstract this to a higher order function,
+; a (unique-k-tuples n k)?
+(define (unique-triplets n)
+  (flatmap
+    (lambda (i)
+      (flatmap (lambda (j)
+             (map (lambda (k)
+                    (list i j k))
+                  (enumerate-interval
+                    1
+                    (- j 1))))
+           (enumerate-interval
+             1
+             (- i 1))))
+    (enumerate-interval 1 n)))
+
+(define (triplets-that-sum-to s n)
+  (define (sum-to-s? triplet)
+    (= s (foldr + 0 triplet)))
+  (filter
+    sum-to-s?
+    (unique-triplets n)))
