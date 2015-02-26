@@ -76,3 +76,44 @@
     ((= exponent 0) 1)
     ((= exponent 1) base)
     (else (list '** base exponent))))
+
+
+(define (make-sum . addends)
+  (let ((sum-numeric-addends (foldr + 0 (filter number? addends)))
+        (non-numeric-addends (filter (lambda (x) (not (number? x))) addends)))
+    (define net-addends (cons sum-numeric-addends non-numeric-addends))
+    (if (null? (cdr net-addends)) ; only one item
+      (car net-addends)
+      (list '+ net-addends))))
+
+(define (make-product m1 m2)
+  (cond ((or (=number? m1 0)
+             (=number? m2 0))
+         0)
+        ((=number? m1 1) m2)
+        ((=number? m2 1) m1)
+        ((and (number? m1) (number? m2))
+         (* m1 m2))
+        (else (list '* m1 m2))))
+(define (sum? x)
+  (and (pair? x) (eq? (car x) '+)))
+(define (addend s) (cadr s))
+(define (augend s) (caddr s))
+(define (product? x)
+  (and (pair? x) (eq? (car x) '*)))
+(define (multiplier p) (cadr p))
+(define (multiplicand p) (caddr p))
+
+(define (exponential? exp)
+  (and (pair? exp) (eq? (car exp) '**)))
+
+(define (base exp) (cadr exp))
+(define (exponent exp) (caddr exp))
+
+(define (make-exponential base exponent)
+  (cond
+    ((not (number? exponent))
+     (error "Can't do non-numerical exponents"))
+    ((= exponent 0) 1)
+    ((= exponent 1) base)
+    (else (list '** base exponent))))
