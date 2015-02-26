@@ -54,5 +54,25 @@
     ))
 
 ; 2.55
-; ''abracadabra evaluates to '(quote abracadabra)
+; ''abracadabra evaluates to '(quote abracadabra) = ('quote 'abracadabra)
 
+; 2.56
+((exponential? exp)
+ (make-product (exponent exp)
+               (make-exponential
+                 (base exp)
+                 (- (exponent exp) 1))))
+
+(define (exponential? exp)
+  (and (pair? exp) (eq? (car exp) '**)))
+
+(define (base exp) (cadr exp))
+(define (exponent exp) (caddr exp))
+
+(define (make-exponential base exponent)
+  (cond
+    ((not (number? exponent))
+     (error "Can't do non-numerical exponents"))
+    ((= exponent 0) 1)
+    ((= exponent 1) base)
+    (else (list '** base exponent))))
