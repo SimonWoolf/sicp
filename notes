@@ -147,4 +147,20 @@ equal? - object equality
 
 -------
 
+; any? and all? helpers
 
+(define (all? proc list)
+  (if
+    (null? list)
+    #t
+    (and (proc (car list))
+         (all? proc (cdr list)))
+    ))
+
+(define (any? proc list)
+  (if
+    (null? list)
+    #f
+    (or (proc (car list))
+        (all? proc (cdr list)))
+    ))
