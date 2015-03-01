@@ -89,34 +89,25 @@
       (car net-addends)
       (cons '+ net-addends))))
 
-(define (make-product m1 m2)
-  (cond ((or (=number? m1 0)
-             (=number? m2 0))
-         0)
-        ((=number? m1 1) m2)
-        ((=number? m2 1) m1)
-        ((and (number? m1) (number? m2))
-         (* m1 m2))
-        (else (list '* m1 m2))))
-(define (sum? x)
-  (and (pair? x) (eq? (car x) '+)))
+(define (make-product . multiplicands)
+  (let ((prod-numeric-multiplicands (foldr * 1 (filter number? multiplicands)))
+        (non-numeric-multiplicands (filter (lambda (x) (not (number? x))) multiplicands)))
+    (define net-multiplicands (cond
+                                ((= 1 prod-numeric-multiplicands)
+                                 non-numeric-multiplicands)
+                                ((= 0 prod-numeric-multiplicands)
+                                 '(0))
+                                (else (cons prod-numeric-multiplicands non-numeric-multiplicands))))
+    (if (null? (cdr net-multiplicands)) ; only one item
+      (car net-multiplicands)
+      (cons '* net-multiplicands))))
+
 (define (addend s) (cadr s))
-(define (augend s) (caddr s))
-(define (product? x)
-  (and (pair? x) (eq? (car x) '*)))
+(define (augend s) (if (null? (cdddr s)) ; only 2 args
+                       (caddr s)
+                       (cons '+ (cddr s))))
+
 (define (multiplier p) (cadr p))
-(define (multiplicand p) (caddr p))
-
-(define (exponential? exp)
-  (and (pair? exp) (eq? (car exp) '**)))
-
-(define (base exp) (cadr exp))
-(define (exponent exp) (caddr exp))
-
-(define (make-exponential base exponent)
-  (cond
-    ((not (number? exponent))
-     (error "Can't do non-numerical exponents"))
-    ((= exponent 0) 1)
-    ((= exponent 1) base)
-    (else (list '** base exponent))))
+(define (multiplicand p) (if (null? (cdddr p)) ; only 2 args
+                             (caddr p)
+                             (cons '* (cddr p))))
