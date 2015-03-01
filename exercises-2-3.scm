@@ -87,7 +87,7 @@
                           (cons sum-numeric-addends non-numeric-addends)))
     (if (null? (cdr net-addends)) ; only one item
       (car net-addends)
-      (list '+ net-addends))))
+      (cons '+ net-addends))))
 
 (define (make-product m1 m2)
   (cond ((or (=number? m1 0)
