@@ -77,11 +77,14 @@
     ((= exponent 1) base)
     (else (list '** base exponent))))
 
+; 2.57
 
 (define (make-sum . addends)
   (let ((sum-numeric-addends (foldr + 0 (filter number? addends)))
         (non-numeric-addends (filter (lambda (x) (not (number? x))) addends)))
-    (define net-addends (cons sum-numeric-addends non-numeric-addends))
+    (define net-addends (if (= 0 sum-numeric-addends)
+                          non-numeric-addends
+                          (cons sum-numeric-addends non-numeric-addends)))
     (if (null? (cdr net-addends)) ; only one item
       (car net-addends)
       (list '+ net-addends))))
