@@ -42,9 +42,22 @@
 
 (= (A 3 3) 65536)
 
+; (for n > 0, anyway)
 (define (f n) (* 2 n))
 (define (g n) (^ 2 n))
-(define (h n) ##TODO##) -- tetration..?
+(define (h n) ...)
+; hmm.
+; h(1) = 2
+; h(2) = 4
+; h(3) = 16
+; h(4) = 65536
+; h(5) = 2^65536
+; ...
+; h(n) = 2^h(n-1)
+; what's the closed form of this?
+; tetration!
+(define (h n) (↑↑ 2 n))
+
 
 ; 1.11
 ; recursive:
@@ -68,6 +81,8 @@
       c
       (f-iter (+ a (* 2 b) (* 3 c)) a b (- count 1))))
 
+; (more efficient: put < 3 check in f, then call f-iter with (- n 2))
+
 ; 1.12
 
 (define (pascal row col)
@@ -77,7 +92,8 @@
                  (pascal (- row 1) col)))))
 
 ; 1.13
-;See paper
+; Factor out phi/psi^n-2 from the induction term,
+; then use that phi and psi are solutions to x^2 = 1 + x
 
 ; 1.14
 ;Tree: see paper
@@ -100,6 +116,17 @@
   )
 
 (define (squared x) (* x x))
+
+; jan 15: or more-or-less equivalently, but more explanatory (and with a
+; useless extra state variable):
+(define (fast-expt2 b n) (fe2iter b n 1 b))
+(define (fe2iter result desired-power current-power base)
+  (cond ((= desired-power current-power) result)
+        ((<= current-power (/ desired-power 2))
+         (fe2iter (square result) desired-power (* current-power 2) base))
+        (else (fe2iter (* result base) desired-power (+ 1 current-power) base))
+         ))
+
 
 ; 1.17
 (define (* a b)

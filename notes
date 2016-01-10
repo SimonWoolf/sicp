@@ -164,3 +164,10 @@ equal? - object equality
     (or (proc (car list))
         (all? proc (cdr list)))
     ))
+
+--
+
+Debugging in racket
+===================
+(displayln ...)
+(newline)
