@@ -5,6 +5,13 @@ applicative-order evaluation -- eagerly evaluate all parameters*before* expandin
 
 normal-order evaluation -- expand procedure definition first. only evaluate when the actual argument values are needed. Lazy evaluation, in other words. effective outcome: expand everything until you get an operation involving only primitive types, then evaluate.
 
+a procedure definition binds its formal parameters. The meaning of a procedure definition is unchanged if a bound variable is consistently renamed throughout the definition. If a variable is not bound, it is free. The set of expressions for which a binding defines a name is called the scope of that name. (eg scope of a formal parameter in a define is the body of the define)
+
+Lexical scoping: free variables in a procedure are looked up in the environment where the procedure was defined, not where it's called.
+This allows block structure -- eg (define (f x) (define (helper a) (.. x a)) ... )
+
+Note: functions are dispatched based just on their name, not on number of parameters.
+
 Control flow
 - (cond (<p> <e> <e> ...) (<p> <e>) (else <e>) ... ) -- last expression in sequence returned
 - (if <p> <e if true> <e if false>)
