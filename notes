@@ -178,3 +178,4 @@ Debugging in racket
 ===================
 (displayln ...)
 (newline)
+(error str anything anything ...)
