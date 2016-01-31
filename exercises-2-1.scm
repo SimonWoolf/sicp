@@ -175,7 +175,32 @@
   (...))
 
 ; 2.11
-; tiresome
+(define (mul-interval-better x y)
+  (define (classify interval)
+    (define a (lower-bound interval))
+    (define b (upper-bound interval))
+    (cond ((and (> a 0) (> b 0)) 1)
+          ((and (< a 0) (< b 0)) -1)
+          (else 0)))
+
+  (define x1 (lower-bound x))
+  (define x2 (upper-bound x))
+  (define y1 (lower-bound y))
+  (define y2 (upper-bound y))
+
+  ; phew!
+  (case (cons (classify x) (classify y))
+    ('(1 . 1) (make-interval (* x1 x2) (* y1 y2)))
+    ('(-1 . -1) (make-interval (* y1 y2) (* x1 x2)))
+    ('(1 . -1) (make-interval (* x2 y1) (* y2 x1)))
+    ('(-1 . 1) (make-interval (* x1 y2) (* y1 x2)))
+    ('(0 . 1) (make-interval (* x1 y2) (* x2 y2)))
+    ('(1 . 0) (make-interval (* y1 x2) (* y2 x2)))
+    ('(0 . -1) (make-interval (* x2 y1) (* x1 y1)))
+    ('(-1 . 0) (make-interval (* y2 x1) (* y1 x1)))
+    ('(0 . 0) (make-interval (min ((* x1 y2) (* x2 y1)))
+                             (max ((* x1 y1) (* x2 y2)))))
+    ))
 
 ; 2.12
 (define (make-center-percent c p)
