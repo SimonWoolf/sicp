@@ -69,20 +69,12 @@
      [length [side3 rect]]
      [length [side4 rect]]]]
 
-[define [area rect]
-  [sqrt [* [length [side1 rect]]
-           [length [side2 rect]]
-           [length [side3 rect]]
-           [length [side4 rect]]]]]
-
-[define [length segment]
-  [let [[p [start-point segment]]
-        [q [end-point segment]]]
-    [sqrt [+ [square [- [y-point p]
-                        [y-point q]]]
-             [square [- [x-point p]
-                        [x-point q]]]]]
-  ]]
+; Altermative:
+; - define (lms p q) = (length (make-segment p q))
+; - given 4 points, store as ((a, c), (b, d))
+; where a and c are opposites, defined as (lms a c) > (lms a b), (lms a d)
+; - perimeter: (* 2 (+ (lms a b) (lms a d))
+; - area: (* (lms a b) (lms a d))
 
 ; 2.4
 
