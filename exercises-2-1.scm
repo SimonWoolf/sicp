@@ -11,8 +11,16 @@
                       (abs n)
                       (- (abs n))
                       )))
-    (cons (/ signed-n g) 
+    (cons (/ signed-n g)
           (/ (abs d) g))))
+
+; alternative (ignoring gcd) (probs less efficient, does unnecessary
+; multiplication):
+(define (make-rat n d)
+  (if (< (* n d) 0)
+      (cons (- (abs n)) (abs d))
+      (cons (abs n) (abs d))
+      ))
 
 ; 2.2
 (define [make-point x y]
