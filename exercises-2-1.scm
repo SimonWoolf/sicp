@@ -210,10 +210,10 @@
   (* 100 (/ (width i) (center i))))
 
 ; 2.13
-; x(1 + d)y(1 + d)
-; = xy(1+d)^2
-; = xy(1 + d^2 + 2d)
-; ~= xy(1 + 2d) for small d
+; x(1 + d)y(1 + e)
+; = xy(1 + de + d + e)
+; ~= xy(1 + d + e) for small d, e
+; so: sum the percentage tolerances
 
 ; 2.14 - 2.16
 ; Yes.
