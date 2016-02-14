@@ -148,6 +148,16 @@ Note: if using lambda you can use the arguments to your op in any order you like
 
 -------
 
+Extended map vs accumulate-n:
+
+(accumulate-n op init lists) maps n lists to one list:
+(folded-first-elements, folded-second-elements, ...)
+
+Extended-map (map op lista listb listc) is similar, but the op must be a
+function of n arguments, rather than one of an item and accumulator
+
+-------
+
 = - numerical-only equality
 eq? - object identity (works as equality for symbols as they are singletons)
 equal? - object equality

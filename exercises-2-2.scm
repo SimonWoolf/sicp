@@ -19,6 +19,17 @@
       (append (reverse (cdr l))
               (list (car l)))))
 
+; 2nd go: iterative way is much better. Literally picking elements of the head
+; of the list and consing them onto the result. Sometimes recursive thinking
+; gives you a worse result
+(define (reverse list)
+  (define (reverse-iter list result)
+    (if (null? list)
+        result
+        (reverse-iter (cdr list) (cons (car list) result))
+        ))
+  (reverse-iter list null))
+
 ; 2.19
 (define (first-denomination coin-values)
   (car (last-pair coin-values)))
@@ -46,6 +57,11 @@
 
 ; will's suggestion: signature of same-parity-helper
 ; can just be (x y), so you don't have to use apply
+;
+; 2nd go, using filter. Much nicer :)
+(define (same-parity original . others)
+  (filter (lambda (x) (= (modulo x 2) (modulo original 2)))
+          others)
 
 ; 2.21
 (define (square-list items)
@@ -84,6 +100,7 @@
 ;   4  o
 
 ; 2.25
+; (note: apply left to right, reverse of composition convention)
 ; d d a d a
 ; a a
 ; d a d a d a d a d a d a
@@ -103,6 +120,18 @@
               (list (deep-reverse (car l))))
       l))
 
+; 2nd go (without append):
+(define (deep-reverse list)
+  (define (reverse-iter l result)
+    (if (null? l)
+        result
+        (reverse-iter (cdr l) (cons (deep-reverse (car l))
+                                    result))
+        ))
+  (if (pair? list)
+      (reverse-iter list null)
+      list))
+
 ; 2.28
 ; :'(
 ; this just returns the thing you put it!
@@ -114,7 +143,20 @@
   (fringe-iter l null))
 
 ; Note: stop trying to do clever thigns and just use append....
-; see enumerate-tree
+(define (fringe original-list)
+  (define (fringe-helper list result)
+    (cond ((null? list) result)
+          ((not (pair? list)) (cons list result))
+          (else (append (fringe (car list)) (fringe (cdr list))))))
+  (fringe-helper original-list null))
+; Actually the helper in the above is unnecessary. See enumerate-tree
+; definition from later on:
+; (define (enumerate-tree tree)
+;  (cond ((null? tree) nil)
+;        ((not (pair? tree)) (list tree))
+;        (else (append
+;               (enumerate-tree (car tree))
+;               (enumerate-tree (cdr tree)))))
 
 ; 2.29
 (define (make-mobile left right)
@@ -207,8 +249,8 @@
       (let ((rest (subsets (cdr s))))
         (append rest (map (lambda (subset) (cons (car s) subset))
                           rest)))))
-; subsets of (x U S) = {{} U {x} U_{T subset S} {x U T}}
-; the {x} comes out of the null element of rest
+; subsets of (x U S) = {S U U_(T ⊂ S) {{x U T}}}
+; the {x} comes out of the null element of (T ⊂ S)
 
 ; 2.33
 (define (map p sequence)
@@ -224,20 +266,16 @@
   (accumulate (lambda (item acc) (+ 1 acc)) 0 sequence))
 
 ; 2.34
-; This always returns x * the answer!
-; could divide by x, but that'd not be in the q template
-; need to not * by x in the leftmost iteration, but the
-; lambda doesn't know what iteration it's in...
+; Note: this works because accumulate is a right-fold,
+; so last element in the seq gets combined with the accumulator first.
+; If was a left-fold, would have to reverse the sequence first
 (define
   (horner-eval x coefficient-sequence)
   (accumulate
-   (lambda (this-coeff higher-terms)
-     (* x (+ this-coeff higher-terms)))
+   (lambda (this-coeff acc)
+     (+ this-coeff (* x acc)))
    0
    coefficient-sequence))
-
-; will points out: can just do this!
-     (+ (* x this-coeff) higher-terms)
 
 ; 2.35
 (define (count-leaves tree)
@@ -263,6 +301,13 @@
               0
               (map (lambda (leaf) 1)
                    (enumerate-tree tree))))
+
+; Second go: maybe going for something like
+(define (count-leaves t)
+  (accumulate + 0 (map (lambda (tree)
+                         (if (pair? tree)
+                             (count-leaves tree)
+                             1)) t))
 
 ; 2.36
 ; eeeasy!
@@ -398,6 +443,11 @@
 (define row car)
 (define col cadr)
 
+(define empty-board null)
+
+(define (adjoin-position row-num col-num positions)
+  (cons (list row-num col-num) positions))
+
 (define (safe? k positions)
   (define proposed-queen (car positions))
   (define other-queens (cdr positions))
@@ -414,3 +464,6 @@
             (- (col proposed-queen) (row proposed-queen))))
         other-queens)
    ))))
+
+; 2.43
+; queen-cols is called k times, rather than once. So will run ~board-size times slower (with the dubious but simplifying assumption that vast majority of time is spent in the last iteration, k = board-size; actually even slower than that)
