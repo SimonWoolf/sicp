@@ -132,6 +132,11 @@
       (reverse-iter list null)
       list))
 
+; Will's solution:
+(define (deep-reverse l)
+  (define (rev l) (if (list? l) (deep-reverse l) l))
+  (reverse (map rev l)))
+
 ; 2.28
 ; :'(
 ; this just returns the thing you put it!
@@ -373,6 +378,10 @@
    (lambda (acc item) ; sodding reversed argument order!
      (cons item acc))
    null sequence))
+
+; or with a sensible language:
+(define (reverse1 list)
+  (foldl cons null list))
 
 ; 2.40
 ; this is just method extraction...
