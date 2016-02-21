@@ -476,3 +476,152 @@
 
 ; 2.43
 ; queen-cols is called k times, rather than once. So will run ~board-size times slower (with the dubious but simplifying assumption that vast majority of time is spent in the last iteration, k = board-size; actually even slower than that)
+
+; Picture language
+; ================
+
+; 2.44
+(define (up-split painter n)
+  (if (= n 0)
+      painter
+      (let ((smaller (up-split painter (- n 1))))
+        (below painter (beside smaller smaller)))))
+
+; 2.45
+(define (split firstop secondop)
+  (define (result painter n)
+    ; Note: smaller is defined as a zero-arity function, not
+    ; a variable, to stop the body being evaluated eagerly
+    (define (smaller) (result painter (- n 1)))
+    (if (= n 0)
+      painter
+      (firstop painter (secondop (smaller) (smaller)))))
+  result)
+
+; 2.46
+(define make-vect cons)
+(define xco car)
+(define yco cdr)
+
+(define (add-vect u v)
+  (make-vect (+ (xco u) (xco v))
+             (+ (yco u) (yco v))))
+
+(define (sub-vect u v)
+  (make-vect (- (xco u) (xco v))
+             (- (yco u) (yco v))))
+
+(define (scale-vect s v)
+  (make-vect (* s (xco v))
+             (* s (yco v))))
+
+; 2.47
+; list version:
+(define origin-frame car)
+(define edge1-frame cadr)
+(define edge2-frame caddr)
+
+; cons version:
+(define origin-frame car)
+(define edge1-frame cadr)
+(define edge2-frame cddr)
+
+; 2.48
+(define make-segment cons)
+(define start-segment car)
+(define end-segment cdr)
+
+; See 2-2-picture-language.rkt for whole thing
+
+; 2.49
+; Lets you specify segments as '(x1 y1 x2 y2)
+; Would be unbearably verbose otherwise
+(define (seg->pai list)
+  (define (helper list result)
+    (if (empty? list)
+        result
+        (helper (cdr list)
+                (cons (make-segment (make-vect (caar list) (cadar list))
+                                    (make-vect (caddar list) (cadddr (car list)))) result))))
+    (segments->painter (helper list '())))
+
+(define frame-outline-painter
+  (seg->pai '((0 0 0 1)
+              (0 0 1 0)
+              (0 1 1 1)
+              (1 0 1 1))))
+
+(define x-painter
+  (seg->pai '((0 0 1 1)
+              (0 1 1 0))))
+
+(define diamond-painter
+  (seg->pai '((0.5 0 0 0.5)
+              (0.5 1 1 0.5)
+              (0.5 0 1 0.5)
+              (0 0.5 0.5 1))))
+
+; ...close enough...
+(define wave-painter
+  (seg->pai '((0.2 0 0.3 0.6)
+              (0.8 0 0.7 0.6)
+              (0.3 0 0.4 0.3)
+              (0.7 0 0.6 0.3)
+              (0.4 0.3 0.6 0.3)
+              (0.3 0.6 0.15 0.5)
+              (0.15 0.5 0 0.6)
+              (0.7 0.6 1 0.4)
+              (0.4 1 0.4 0.8)
+              (0.6 1 0.6 0.8)
+              (0.4 0.8 0.6 0.8)
+              )))
+
+; 2.50
+(define (flip-horiz painter)
+  (transform-painter
+   painter
+   (make-vect 1.0 0.0)   ; new origin
+   (make-vect 0.0 0.0)   ; new end of edge1
+   (make-vect 1.0 1.0))) ; new end of edge2
+
+; Seems silly to define separate rotate-foo functions for each foo
+; that's what trigonometry's for
+(define (rotate-ccw degrees painter)
+  (define theta (degrees->radians degrees))
+  (define (trig offset)
+    ; add 0.5 to translate from centre-of-square-origin
+    ; coordinates to bottom-left-origin coordinates
+    (+ 0.5
+       (* (/ 1 (sqrt 2)) ; radius of the circumcircle of the square
+          (cos (+ offset (* pi (/ 5 4))))))) ; since zero-point of theta is bottom left
+  (transform-painter
+   painter
+   (make-vect (trig theta) (trig (- theta (/ pi 2))))
+   (make-vect (trig (+ theta (/ pi 2))) (trig theta))
+   (make-vect (trig (- theta (/ pi 2))) (trig (- theta pi)))))
+
+; 2.51
+(define (below painter1 painter2)
+  (let ((split-point (make-vect 0.0 0.5)))
+    (let ((paint-top   (transform-painter
+                        painter1
+                        split-point
+                        (make-vect 1.0 0.5)
+                        (make-vect 0.0 1.0)))
+          (paint-bottm (transform-painter
+                        painter2
+                        (make-vect 0.0 0.0)
+                        (make-vect 1.0 0.0)
+                        split-point)))
+      (lambda (frame)
+        (paint-top frame)
+        (paint-bottm frame)))))
+
+; in terms of rotate and beside:
+(define (below painter1 painter2)
+  (rotate-ccw 90
+              (beside (rotate-ccw 270 painter1)
+                      (rotate-ccw 270 painter2))))
+
+; 2.52
+; this is a 'play around' question, see picture-language.rkt for a few experiments
