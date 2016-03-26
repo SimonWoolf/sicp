@@ -55,7 +55,10 @@ i.e. if f(g(x), h(x)), let lets you define g and h first then define f in terms 
 which is more intuitive than defining f as a lambda then applying it to expressions for
 g and h.
 
-warning: that means that you can't define let-exprs in terms of other let-exprs
+warning: that means that you can't define let-exprs in terms of other
+let-exprs. unless you nest them. which is ugly/unreadable. better just to use
+defines unless you need the requirement that let-exprs can't reference other
+let-exps?
 
 --
 
@@ -164,6 +167,8 @@ function of n arguments, rather than one of an item and accumulator
 eq? - object identity (works as equality for symbols as they are singletons)
 equal? - object equality
 
+memq - member eq - uses eq? to compare
+
 -------
 
 ; any? and all? helpers
@@ -184,10 +189,32 @@ equal? - object equality
         (all? proc (cdr list)))
     ))
 
---
+----------
+
+Quoting:
+'(a b c) is equivalent to (list 'a 'b 'c)
+
+TODO: understand
+>  (list 'car (list 'quote '(a b c)))
+'(car '(a b c))
+
+understand
+(define (tree->list-2 tree)
+  (define (copy-to-list tree result-list)
+    (if (null? tree)
+        result-list
+        (copy-to-list
+         (left-branch tree)
+         (cons (entry tree)
+               (copy-to-list
+                (right-branch tree)
+                result-list)))))
+  (copy-to-list tree '()))
 
 Debugging in racket
 ===================
 (displayln ...)
 (newline)
 (error str anything anything ...)
+
+--
