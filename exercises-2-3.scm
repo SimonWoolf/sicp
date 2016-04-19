@@ -199,6 +199,9 @@
 ; at each non-null vertix which is O(size of left side). So it's O(n^2) rather
 ; than O(n). (will it be n^2? might be better than that. not sure). So right
 ; one is more efficient even though it's less intuitive
+;
+; Actually: I think it's O(n log(n)). Append is called once with a list of size (n/2), then twice with a list of size (n/4), four times with (n/8), ... k times with a list of size (1/(2k))). Convergent sum: that's equivalent to being called k times with a list of size (n/2), where k is the number of levels of the tree, which is O(log(n)). * the number of vertices (O(n)), then it's n log(n) ..?
+
 
 ; 2.64
 
