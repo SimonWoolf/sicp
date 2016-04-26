@@ -59,6 +59,9 @@ warning: that means that you can't define let-exprs in terms of other
 let-exprs. unless you nest them. which is ugly/unreadable. better just to use
 defines unless you need the requirement that let-exprs can't reference other
 let-exps?
+--
+
+Note that you can't use defines in an 'expression context', eg the result branch of an if. Not even wrapped in a (begin ...). You can switch to cond and use internalt defines, or use if with a let expression.
 
 --
 

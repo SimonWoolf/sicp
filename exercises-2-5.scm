@@ -119,7 +119,8 @@
     (let ((proc (get op type-tags)))
       (if proc
         (apply proc (map contents args))
-        (if (not (apply alleqv? type-tags))
+        (if (apply alleqv? type-tags)
+          (error "No method for these types" (list op type-tags))
           (begin
             (define coercions-table
               (map (lambda (to-type)
@@ -149,8 +150,9 @@
 (define (install-raise-package)
   ; internal helper procedures (numer, denom, make-foo etc) are assumed to be
   ; available.  (in practice you'd just add these to individual packages etc to
-  ; get the helpers).  Also assume integer package exists. And the
-  ; scheme-number package is now called 'real'
+  ; get the helpers).  Also assume integer package exists. And I guess the
+  ; scheme-number package is now called 'real'? This is getting a bit
+  ; hypothetical. pity we can't actually run these...
   (define (raise-int int)
     (make-rational int 1))
   (define (raise-rat rat)
@@ -167,7 +169,7 @@
 (define (apply-generic op . args)
   ; tests if one is higher than two
   (define (higher-than? one two)
-    (define raise-two (get 'raise (list (typetag two))))
+    (define raise-two (get 'raise (list (type-tag two))))
     (cond ((null? raise-two) #f)
           ((= (type-tag one) (type-tag (raise-two two))) #t)
           (else (higher-than? one (raise-two two))))) ; recurse
@@ -201,13 +203,14 @@
   ; parent node == highest type in args. So only one row in coercion table.
   (if proc
     (apply proc (map contents args))
-    (if (not (apply alleqv? type-tags))
+    (if (apply alleqv? type-tags)
+      (error "No method for these types" (list op type-tags))
       (begin
         (define to-type (highest-type-in-args))
         (define raise-fns
           (map (lambda (from)
-                 (raise-to from to-type)))
-          type-tags)
+                 (raise-to from to-type))
+          type-tags))
         (define result
           (apply-generic op (map (lambda (raise-fn arg)
                                    (raise-fn arg))
@@ -219,13 +222,13 @@
 (define (install-project-package)
   ; internal helper procedures (numer, denom, make-foo etc) are assumed to be
   ; available.  (in practice you'd just add these to individual packages etc to
-  ; get the helpers).  Also assume integer package exists. And the
-  ; scheme-number package is now called 'real'
+  ; get the helpers).
+  ; Also assume integer package exists.
+  ; Also the scheme-number package is now called 'real' for some reason?
   (define (project-complex com)
     (make-scheme-number (real-part com)))
   (define (project-real real)
-    ; feels a bit cheeky to use racket builtin rational helpers for this, but
-    ; otherwise...
+    ; feels a bit cheeky to use racket builtin rational helpers for this, but eh
     (define exact (inexact->exact real))
     (make-rational (numerator exact) (denominator exact)))
   (define (project-rational rational)
@@ -245,5 +248,152 @@
     (drop projected)
     object))
 
+; new version of apply-generic omitted - just wrap the result in a drop...
+
 ; 2.86
+
+; Main change to the install-rectangular and install-polar packages are to
+; make all internal operations able to cope with tagged data. So add rather
+; than +, cosine rather than cos, etc. etc.
+; All real & subsets numbers will have to implement new sine, cosine, arctan,
+; and square root operations
+
+(define (install-rectangular-package)
+  ;; internal procedures
+  (define (real-part z) (car z))
+  (define (imag-part z) (cdr z))
+  (define (make-from-real-imag x y)
+    (cons x y))
+  (define (square x) (mul x x))
+  (define (magnitude z)
+    (square-root (add (square (real-part z))
+                      (square (imag-part z)))))
+  (define (angle z)
+    (arctan (imag-part z) (real-part z)))
+  (define (make-from-mag-ang r a)
+    (cons (mul r (cosine a)) (mul r (sine a))))
+  ;; interface to the rest of the system
+  (define (tag x)
+    (attach-tag 'rectangular x))
+  (put 'real-part '(rectangular) real-part)
+  (put 'imag-part '(rectangular) imag-part)
+  (put 'magnitude '(rectangular) magnitude)
+  (put 'angle '(rectangular) angle)
+  (put 'make-from-real-imag 'rectangular
+       (lambda (x y)
+         (tag (make-from-real-imag x y))))
+  (put 'make-from-mag-ang 'rectangular
+       (lambda (r a)
+         (tag (make-from-mag-ang r a))))
+  'done)
+
+(define (install-polar-package)
+  ;; internal procedures
+  (define (magnitude z) (car z))
+  (define (angle z) (cdr z))
+  (define (make-from-mag-ang r a) (cons r a))
+  (define (real-part z)
+    (mul (magnitude z) (cosine (angle z))))
+  (define (imag-part z)
+    (mul (magnitude z) (sine (angle z))))
+  (define (square x) (mul x x))
+  (define (make-from-real-imag x y)
+    (cons (square-root (add (square x) (square y)))
+          (arctan y x)))
+  ;; interface to the rest of the system
+  (define (tag x) (attach-tag 'polar x))
+  (put 'real-part '(polar) real-part)
+  (put 'imag-part '(polar) imag-part)
+  (put 'magnitude '(polar) magnitude)
+  (put 'angle '(polar) angle)
+  (put 'make-from-real-imag 'polar
+       (lambda (x y)
+         (tag (make-from-real-imag x y))))
+  (put 'make-from-mag-ang 'polar
+       (lambda (r a)
+         (tag (make-from-mag-ang r a))))
+  'done)
+
+(define (install-scheme-number-package)
+  (define (tag x)
+    (attach-tag 'scheme-number x))
+  (put 'add '(scheme-number scheme-number)
+       (lambda (x y) (tag (+ x y))))
+  (put 'sub '(scheme-number scheme-number)
+       (lambda (x y) (tag (- x y))))
+  (put 'mul '(scheme-number scheme-number)
+       (lambda (x y) (tag (* x y))))
+  (put 'div '(scheme-number scheme-number)
+       (lambda (x y) (tag (/ x y))))
+  (put 'sine '(scheme-number)
+       (lambda (x) (tag (sin x))))
+  (put 'cosine '(scheme-number)
+       (lambda (x) (tag (cos x))))
+  (put 'arctan '(scheme-number)
+       (lambda (x) (tag (atan x))))
+  (put 'square-root '(scheme-number)
+       (lambda (x) (tag (sqrt x))))
+  (put 'make 'scheme-number
+       (lambda (x) (tag x)))
+  'done)
+
+(define (install-rational-package)
+  ;; internal procedures
+  (define (numer x) (car x))
+  (define (denom x) (cdr x))
+  (define (to-real x) (/ (numer x) (denom x)))
+  (define (make-rat n d)
+    (let ((g (gcd n d)))
+      (cons (/ n g) (/ d g))))
+  (define (add-rat x y)
+    (make-rat (+ (* (numer x) (denom y))
+                 (* (numer y) (denom x)))
+              (* (denom x) (denom y))))
+  (define (sub-rat x y)
+    (make-rat (- (* (numer x) (denom y))
+                 (* (numer y) (denom x)))
+              (* (denom x) (denom y))))
+  (define (mul-rat x y)
+    (make-rat (* (numer x) (numer y))
+              (* (denom x) (denom y))))
+  (define (div-rat x y)
+    (make-rat (* (numer x) (denom y))
+              (* (denom x) (numer y))))
+  (define (square-root-rat x)
+    (make-rat (sqrt (numer x))
+              (sqrt (denom x))))
+  ; The sine function returns a real - nothing says
+  ; these operations have to have closure
+  (define (sine-rat x)
+    (make-scheme-number (sin (to-real x))))
+  (define (cosine-rat x)
+    (make-scheme-number (cos (to-real x))))
+  (define (arctan-rat x)
+    (make-scheme-number (atan (to-real x))))
+  ;; interface to rest of the system
+  (define (tag x) (attach-tag 'rational x))
+  (put 'add '(rational rational)
+       (lambda (x y) (tag (add-rat x y))))
+  (put 'sub '(rational rational)
+       (lambda (x y) (tag (sub-rat x y))))
+  (put 'mul '(rational rational)
+       (lambda (x y) (tag (mul-rat x y))))
+  (put 'div '(rational rational)
+       (lambda (x y) (tag (div-rat x y))))
+  (put 'square-root '(rational)
+       (lambda (x) (tag (square-root-rat x))))
+  (put 'sine '(rational)
+       (lambda (x) (tag (sine-rat x))))
+  (put 'cosine '(rational)
+       (lambda (x) (tag (cosine-rat x))))
+  (put 'arctan '(rational)
+       (lambda (x) (tag (arctan-rat x))))
+  (put 'make 'rational
+       (lambda (n d) (tag (make-rat n d))))
+  'done)
+
+(define (sine x) (apply-generic 'sine x))
+(define (cosine x) (apply-generic 'cosine x))
+(define (arctan x) (apply-generic 'arctan x))
+(define (square-root x) (apply-generic 'square-root x))
 
