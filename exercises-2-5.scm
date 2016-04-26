@@ -66,10 +66,10 @@
     (if (not (= 0 (imag-part com)))
       #f
       (approx-eq (real-part com)
-                 (/ (numer-rat) (denom-rat)))))
+                 (/ (numer rat) (denom rat)))))
   (define (equ-rat-num rat num)
     (approx-eq num
-               (/ (numer-rat) (denom-rat))))
+               (/ (numer rat) (denom-rat))))
   (put 'equ? '(scheme-number scheme-number) equ-num)
   (put 'equ? '(rational rational) equ-rat)
   (put 'equ? '(complex complex) equ-com)
@@ -111,31 +111,139 @@
 ; 2.82
 ; This assumes we do have louis-reasoner's i->i methods
 (define (apply-generic op . args)
+  (define (alleqv? . args)
+    (foldl (lambda (x acc)
+             (and acc (eqv? x (car args))))
+           #t args))
   (let ((type-tags (map type-tag args)))
     (let ((proc (get op type-tags)))
       (if proc
         (apply proc (map contents args))
-        (if (not (apply eq? type-tags))
-          (define coercions-table
-            (map (lambda (to-type)
-                   (map (lambda (from-type)
-                          (get-coercion from-type to-type))
-                        type-tags))
-                 type-tags))
-          (define result (foldl (lambda (coercion-row acc)
-                                  (or acc
-                                      (if (any? null? coercion-row)
-                                        '()
-                                        ; multiple-input map - zips coercion-row
-                                        ; with args and applies the corresponding
-                                        ; coercion to each arg
-                                        (apply-generic op (map (lambda (coercion arg)
-                                                                 (coercion arg))
-                                                               coercion-row args))))
-                                  ) '() coercions-table))
-          (or result (error "No method for these types"
-                            (list op type-tags))))))))
+        (if (not (apply alleqv? type-tags))
+          (begin
+            (define coercions-table
+              (map (lambda (to-type)
+                     (map (lambda (from-type)
+                            (get-coercion from-type to-type))
+                          type-tags))
+                   type-tags))
+            (define result (foldl (lambda (coercion-row acc)
+                                    (or acc
+                                        (if (any? null? coercion-row)
+                                          '()
+                                          ; multiple-input map - zips coercion-row
+                                          ; with args and applies the corresponding
+                                          ; coercion to each arg
+                                          (apply-generic op (map (lambda (coercion arg)
+                                                                   (coercion arg))
+                                                                 coercion-row args))))
+                                    ) '() coercions-table))
+            (or result (error "No method for these types"
+                              (list op type-tags)))))))))
 
-; This is not sufficiently general in the non-tower case where everything needs to be coerced to some higher common denominator. Eg an isosceles and right-angled triange which 
+; This is not sufficiently general in the non-tower case where everything needs
+; to be coerced to some higher common denominator. Eg an isosceles and
+; right-angled triange which both need to be raised to triange
 
 ; 2.83
+(define (install-raise-package)
+  ; internal helper procedures (numer, denom, make-foo etc) are assumed to be
+  ; available.  (in practice you'd just add these to individual packages etc to
+  ; get the helpers).  Also assume integer package exists. And the
+  ; scheme-number package is now called 'real'
+  (define (raise-int int)
+    (make-rational int 1))
+  (define (raise-rat rat)
+    (make-scheme-number (/ (numer rat) (denom rat))))
+  (define (raise-real real)
+    (make-complex-from-real-imag real 0))
+  (put 'raise '(integer) raise-int)
+  (put 'raise '(rational) raise-rat)
+  (put 'raise '(real) raise-real))
+
+(define (raise x) (apply-generic 'raise x))
+
+; 2.84
+(define (apply-generic op . args)
+  ; tests if one is higher than two
+  (define (higher-than? one two)
+    (define raise-two (get 'raise (list (typetag two))))
+    (cond ((null? raise-two) #f)
+          ((= (type-tag one) (type-tag (raise-two two))) #t)
+          (else (higher-than? one (raise-two two))))) ; recurse
+
+  ;(define (highest-type-in-args) (car (sort args higher-than)))
+  ; technically that was cheating as haven't done sort in sicp yet...
+  (define (highest-type-in-args)
+    (foldl (lambda (x acc)
+             (if (or (null? acc) (higher-than? x acc))
+               x
+               acc)) '() args))
+
+  ; Assumes that (raise-to from to-type) will only be called if from is
+  ; raisable to to-type (true for its use here since confirmed by higher-than)
+  (define (raise-to from to-type)
+    (if (= (type-tag from) to-type)
+      from
+      (raise-to (raise from) to-type)))
+
+  (define type-tags (map type-tag args))
+
+  (define proc (get op type-tags))
+
+  (define (alleqv? . args)
+    (foldl (lambda (x acc)
+             (and acc (eqv? x (car args))))
+           #t args))
+
+  ; Question specifies 'tower'. So can ignore case when everything needs to be
+  ; raised beyond what they originally were, since in a tower, highest common
+  ; parent node == highest type in args. So only one row in coercion table.
+  (if proc
+    (apply proc (map contents args))
+    (if (not (apply alleqv? type-tags))
+      (begin
+        (define to-type (highest-type-in-args))
+        (define raise-fns
+          (map (lambda (from)
+                 (raise-to from to-type)))
+          type-tags)
+        (define result
+          (apply-generic op (map (lambda (raise-fn arg)
+                                   (raise-fn arg))
+                                 raise-fns args)))
+        (or result (error "No method for these types"
+                          (list op type-tags)))))))
+
+; 2.85
+(define (install-project-package)
+  ; internal helper procedures (numer, denom, make-foo etc) are assumed to be
+  ; available.  (in practice you'd just add these to individual packages etc to
+  ; get the helpers).  Also assume integer package exists. And the
+  ; scheme-number package is now called 'real'
+  (define (project-complex com)
+    (make-scheme-number (real-part com)))
+  (define (project-real real)
+    ; feels a bit cheeky to use racket builtin rational helpers for this, but
+    ; otherwise...
+    (define exact (inexact->exact real))
+    (make-rational (numerator exact) (denominator exact)))
+  (define (project-rational rational)
+    (make-integer (round rational)))
+  (put 'project '(complex) project-complex)
+  (put 'project '(real) project-real)
+  (put 'project '(rational) project-rational))
+
+(define (project x) (apply-generic 'project x))
+
+(define (drop object)
+  (define proj-fn (get 'project (type-tag object)))
+  (define projected
+    (and proj-fn (proj-fn object)))
+  ; so that (raise projected) won't be evaluated if projected is nil
+  (if (and projected (equ? object (raise projected)))
+    (drop projected)
+    object))
+
+; 2.86
+
