@@ -1,3 +1,7 @@
+; NB: most of these answers are buggy (were written without running them, as
+; didn't have get and put).  Later did actual running versions, can be found in
+; polynomials.rkt
+
 ; 2.77
 ; Without the magnitude part from the complex package, fails on the third set below
 ; assume it was rectangular.
@@ -18,7 +22,7 @@
 
 ; 2.78
 (define (attach-tag type-tag contents)
-  (if (equal? (type-tag 'scheme-number))
+  (if (equal? type-tag 'scheme-number)
     contents
     (cons type-tag contents)))
 
@@ -397,3 +401,9 @@
 (define (arctan x) (apply-generic 'arctan x))
 (define (square-root x) (apply-generic 'square-root x))
 
+
+; 2.87
+; ok, enough coding blind, this is bullshit. I want to be able to actually run
+; things. Previous few exercises were probably riddled with syntax errors.
+; Googled some get and put helpers for racket (using make-hash), will be
+; implementing this exercise in full in 2-5-polynomials.rkt.

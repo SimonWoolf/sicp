@@ -197,23 +197,6 @@ memq - member eq - uses eq? to compare
 Quoting:
 '(a b c) is equivalent to (list 'a 'b 'c)
 
-TODO: understand
->  (list 'car (list 'quote '(a b c)))
-'(car '(a b c))
-
-understand
-(define (tree->list-2 tree)
-  (define (copy-to-list tree result-list)
-    (if (null? tree)
-        result-list
-        (copy-to-list
-         (left-branch tree)
-         (cons (entry tree)
-               (copy-to-list
-                (right-branch tree)
-                result-list)))))
-  (copy-to-list tree '()))
-
 Debugging in racket
 ===================
 (displayln ...)
@@ -221,3 +204,14 @@ Debugging in racket
 (error str anything anything ...)
 
 --
+
+get and put helpers in racket
+=============================
+; source: stackoverflow
+(define *op-table* (make-hash))
+
+(define (put op type proc)
+  (hash-set! *op-table* (list op type) proc))
+
+(define (get op type)
+  (hash-ref *op-table* (list op type) '()))
