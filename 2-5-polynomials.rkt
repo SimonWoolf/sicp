@@ -3,6 +3,10 @@
 ; Contains full implementation of number tower (integer, rational, real, complex),
 ; using racket builtins for integer and real, and custom types for rational and complex
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SETTING UP TYPE SYSTEM ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (require racket/flonum)
 (define machine-epsilon
   (let loop ([n 1.0])
@@ -42,6 +46,10 @@
          datum)
         (else (error "Bad tagged datum:
                      CONTENTS" datum))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;     APPLY-GENERIC      ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (apply-generic op . args)
   (displayln (list "apply-generic" op args))
@@ -115,6 +123,9 @@
 (define (angle z) 
   (apply-generic 'angle z))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;    RAISING/DROPPING    ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (install-raise-package)
   (define numer car)
@@ -156,6 +167,10 @@
   (if (and projected (equ? object (raise projected)))
     (drop projected)
     object))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;        COMPLEX         ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (install-rectangular-package)
   ;; internal procedures
@@ -223,6 +238,11 @@
         'polar) 
    r a))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;   INTEGERS / REALS     ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; (using scheme builtins)
+
 (define (install-scheme-number-package)
   (define (tag x)
     (attach-tag 'scheme-number x))
@@ -262,6 +282,10 @@
 (define (make-integer n)
   ((get 'make 'integer) n))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;       RATIONALS        ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define (install-rational-package)
   (define numer car)
   (define denom cdr)
@@ -298,6 +322,10 @@
 
 (define (make-rational n d)
   ((get 'make 'rational) n d))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;        EQUALITY        ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (install-equality-package)
   (define numer car)
@@ -342,6 +370,10 @@
 (define (equ? a b) (apply-generic 'equ? a b))
 
 (define (=zero? a) (equ? a 0))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;      POLYNOMIALS       ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (install-polynomial-package)
   ;; internal procedures
@@ -455,6 +487,10 @@
 
 (define (make-polynomial var terms)
   ((get 'make 'polynomial) var terms))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;    INSTALL PACKAGES    ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (install-project-package)
 (install-scheme-number-package)
