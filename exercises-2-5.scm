@@ -406,4 +406,49 @@
 ; ok, enough coding blind, this is bullshit. I want to be able to actually run
 ; things. Previous few exercises were probably riddled with syntax errors.
 ; Googled some get and put helpers for racket (using make-hash), will be
-; implementing this exercise in full in 2-5-polynomials.rkt.
+; implementing the number tower and polynomial exercises in full in 2-5-polynomials.rkt.
+
+; My =zero? relies on equ?, so should just work once these are implemented:
+; should work for integer, rational, and real, as = compares across those types
+(define (equ-poly-num poly num)
+  (define terms (term-list poly))
+  (if (= num 0)
+    (null? terms)
+    (and (= 1 (length terms))
+         (= 0 (order (car terms)))
+         (= num (coeff (car terms))))))
+
+(put 'equ? '(polynomial scheme-number)
+     equ-poly-num)
+(put 'equ? '(scheme-number polynomial)
+     (swap-args equ-poly-num))
+(put 'equ? '(polynomial rational)
+     equ-poly-num)
+(put 'equ? '(rational polynomial)
+     (swap-args equ-poly-num))
+(put 'equ? '(polynomial integer)
+     equ-poly-num)
+(put 'equ? '(integer polynomial)
+     (swap-args equ-poly-num))
+
+; 2.88
+(define (sub-poly p1 p2)
+  (if (same-variable? (variable p1)
+                      (variable p2))
+    (make-poly
+      (variable p1)
+      (sub-terms (term-list p1)
+                 (term-list p2)))
+    (error "Polys not in same var: SUB-POLY"
+           (list p1 p2)))
+
+  (define (sub-terms L1 L2)
+    (add-terms L1 (negate-terms L2)))
+
+  (define (negate-terms L)
+    ; Turns out racket has pattern-matching! First term in the
+    ; body array is the match expr, second is the output
+    (map (match-lambda [(list order coeff)
+                        (list order (- coeff))])
+         L)
+
