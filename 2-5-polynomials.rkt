@@ -403,8 +403,8 @@
     (if (= num 0)
       (null? terms)
       (and (= 1 (length terms))
-           (= 0 (order (car terms)))
-           (= num (coeff (car terms))))))
+           (= 0 (order (first-term terms)))
+           (= num (coeff (first-term terms))))))
 
   ;; representation of terms and term lists
   (define (adjoin-term term term-list)
@@ -515,6 +515,9 @@
   (put 'add '(polynomial polynomial)
        (lambda (p1 p2)
          (tag (add-poly p1 p2))))
+  (put 'sub '(polynomial polynomial)
+       (lambda (p1 p2)
+         (tag (sub-poly p1 p2))))
   (put 'mul '(polynomial polynomial)
        (lambda (p1 p2)
          (tag (mul-poly p1 p2))))

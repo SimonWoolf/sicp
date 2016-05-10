@@ -440,15 +440,35 @@
       (sub-terms (term-list p1)
                  (term-list p2)))
     (error "Polys not in same var: SUB-POLY"
-           (list p1 p2)))
+           (list p1 p2))))
 
-  (define (sub-terms L1 L2)
-    (add-terms L1 (negate-terms L2)))
+(define (sub-terms L1 L2)
+  (add-terms L1 (negate-terms L2)))
 
-  (define (negate-terms L)
-    ; Turns out racket has pattern-matching! First term in the
-    ; body array is the match expr, second is the output
-    (map (match-lambda [(list order coeff)
-                        (list order (- coeff))])
-         L)
+(define (negate-terms L)
+  ; Turns out racket has pattern-matching! First term in the
+  ; body array is the match expr, second is the output
+  (map (match-lambda [(list order coeff)
+                      (list order (- coeff))])
+       L))
 
+
+; 2.89
+(define (adjoin-term term term-list)
+  ; The length of the term-list is 1 plus the
+  ; order of the highest-order term currently in it
+  (cond ((= (order term) (length term-list))
+         (cons (coeff term) term-list))
+        ((> (order term) (length term-list))
+         (adjoin-term term (cons 0 term-list)))
+        (else (error "adjoining term must be higher order than already here"))))
+
+; can no longer just car a term off, since a term-list is no longer a list of terms
+(define (first-term term-list)
+  (make-term (- (length term-list) 1)
+             (car term-list)))
+(define (rest-terms term-list) (cdr term-list))
+
+(define (negate-terms L)
+  (map (lambda (coeff) (- coeff))
+       L))
