@@ -649,6 +649,29 @@
             t1
             (rest-terms L))))))
 
+  (define (div-terms L1 L2)
+    (if (empty-termlist? L1)
+      (list (the-empty-termlist)
+            (the-empty-termlist))
+      (let ((t1 (first-term L1))
+            (t2 (first-term L2)))
+        (if (> (order t2) (order t1))
+          (list (the-empty-termlist) L1)
+          (let ((new-c (div (coeff t1)
+                            (coeff t2)))
+                (new-o (- (order t1)
+                          (order t2))))
+            (let ((rest-of-result
+                    (div-terms (sub-terms L1
+                                          (mul-terms L2
+                                                     (list (make-term new-o
+                                                                      new-c))))
+                               L2)))
+              (let ((quotient (cons (make-term new-o new-c)
+                                    (car rest-of-result)))
+                    (remainder (cdr rest-of-result)))
+                (cons quotient remainder))))))))
+
   (define (add-poly p1 p2)
     (if (same-variable? (variable p1)
                         (variable p2))
@@ -681,6 +704,19 @@
              MUL-POLY"
              (list p1 p2))))
 
+  (define (div-poly dividend divisor)
+    (cond ((same-variable? (variable dividend)
+                           (variable divisor))
+           (define result 
+             (div-terms (term-list dividend)
+                        (term-list divisor)))
+           (define quotient (car result))
+           (define remainder (cdr result))
+           (define var (variable dividend))
+           (list (make-poly var quotient)
+                 (make-poly var remainder)))
+          (else (error "Polys not in same var: DIV-POLY" (list dividend divisor)))))
+
   ;; interface to rest of the system
   (define (tag p) (attach-tag 'sparse-poly p))
   (put 'add '(sparse-poly sparse-poly)
@@ -692,6 +728,9 @@
   (put 'mul '(sparse-poly sparse-poly)
        (lambda (p1 p2)
          (tag (mul-poly p1 p2))))
+  (put 'div '(sparse-poly sparse-poly)
+       (lambda (p1 p2)
+         (tag (div-poly p1 p2))))
   (put 'make 'sparse-poly
        (lambda (var terms)
          (tag (make-poly var terms))))
@@ -768,3 +807,6 @@
 (install-raise-package)
 (install-dense-poly-package)
 (install-sparse-poly-package)
+
+(define example-poly-a (make-sparse-poly 'x '((5 1) (0 -1))))
+(define example-poly-b (make-sparse-poly 'x '((2 1) (0 -1))))

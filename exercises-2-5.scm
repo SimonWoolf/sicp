@@ -478,3 +478,40 @@
 ; using the get/put system, but avoiding raising or dropping.
 ; Mixed operations all convert dense to sparse (as sparse is at worst only a
 ; constant factor less efficient than dense)
+
+; 2.91
+(define (div-poly dividend divisor)
+  (cond ((same-variable? (variable dividend)
+                         (variable divisor))
+         (define result
+           (div-terms (term-list dividend)
+                      (term-list divisor)))
+         (define quotient (car result))
+         (define remainder (cdr result))
+         (define var (variable dividend))
+         (list (make-poly var quotient)
+               (make-poly var remainder)))
+        (else (error "Polys not in same var: DIV-POLY" (list dividend divisor)))))
+
+(define (div-terms L1 L2)
+  (if (empty-termlist? L1)
+    (list (the-empty-termlist)
+          (the-empty-termlist))
+    (let ((t1 (first-term L1))
+          (t2 (first-term L2)))
+      (if (> (order t2) (order t1))
+        (list (the-empty-termlist) L1)
+        (let ((new-c (div (coeff t1)
+                          (coeff t2)))
+              (new-o (- (order t1)
+                        (order t2))))
+          (let ((rest-of-result
+                  (div-terms (sub-terms L1
+                                        (mul-terms L2
+                                                   (list (make-term new-o
+                                                                    new-c))))
+                             L2)))
+            (let ((quotient (cons (make-term new-o new-c)
+                                  (car rest-of-result)))
+                  (remainder (cdr rest-of-result)))
+              (cons quotient remainder))))))))
