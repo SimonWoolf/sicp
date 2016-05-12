@@ -472,3 +472,9 @@
 (define (negate-terms L)
   (map (lambda (coeff) (- coeff))
        L))
+
+; 2.90
+; Implemented in 2-5-polynomials.rkt
+; using the get/put system, but avoiding raising or dropping.
+; Mixed operations all convert dense to sparse (as sparse is at worst only a
+; constant factor less efficient than dense)

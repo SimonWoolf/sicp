@@ -55,7 +55,9 @@
   (displayln (list "apply-generic" op args))
 
   (define (conditional-drop result)
-    (if (memq op '(raise project equ? make))
+    ; Don't try and drop polynomials, limit to number tower
+    (if (or (memq op '(raise project equ? make))
+            (memq (type-tag result) '(dense-poly sparse-poly)))
       result
       (drop result)))
 
@@ -380,7 +382,176 @@
 ;;      POLYNOMIALS       ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (install-polynomial-package)
+; dense
+
+(define (install-dense-poly-package)
+  (define (swap-args fun)
+    (lambda (a b) (fun b a)))
+  ;; internal procedures
+  ;; representation of poly
+  (define (make-poly variable term-list)
+    (cons variable term-list))
+  (define (variable p) (car p))
+  (define (term-list p) (cdr p))
+  (define variable? symbol?)
+  (define (same-variable? v1 v2)
+    (and (variable? v1)
+         (variable? v2)
+         (eq? v1 v2)))
+
+  ; needed for =zero? check
+  ; should work for integer, rational, and
+  ; real, as = compares across those types
+  (define (equ-poly-num poly num)
+    (define terms (term-list poly))
+    (if (= num 0)
+      (null? terms)
+      (and (= 1 (length terms))
+           (= num (first-term terms)))))
+
+  ;; representation of terms and term lists
+  (define (adjoin-term term term-list)
+    ; The length of the term-list is 1 plus the
+    ; order of the highest-order term currently in it
+    (cond ((= (order term) (length term-list))
+           (cons (coeff term) term-list))
+          ((> (order term) (length term-list))
+           (adjoin-term term (cons 0 term-list)))
+          (else (error "adjoining term must be higher order than already here"))))
+  (define (the-empty-termlist) '())
+  (define (first-term term-list)
+    (make-term (- (length term-list) 1)
+               (car term-list)))
+  (define (rest-terms term-list) (cdr term-list))
+  (define (empty-termlist? term-list)
+    (null? term-list))
+  (define (make-term order coeff)
+    (list order coeff))
+  (define (order term) (car term))
+  (define (coeff term) (cadr term))
+
+  (define (add-terms L1 L2)
+    (cond ((empty-termlist? L1) L2)
+          ((empty-termlist? L2) L1)
+          (else
+            (let ((t1 (first-term L1))
+                  (t2 (first-term L2)))
+              (cond ((> (order t1) (order t2))
+                     (adjoin-term
+                       t1
+                       (add-terms (rest-terms L1)
+                                  L2)))
+                    ((< (order t1) (order t2))
+                     (adjoin-term
+                       t2
+                       (add-terms
+                         L1
+                         (rest-terms L2))))
+                    (else
+                      (adjoin-term
+                        (make-term
+                          (order t1)
+                          (add (coeff t1)
+                               (coeff t2)))
+                        (add-terms
+                          (rest-terms L1)
+                          (rest-terms L2)))))))))
+
+  (define (negate-terms L)
+    (map (lambda (coeff) (- coeff))
+         L))
+
+  (define (sub-terms L1 L2)
+    (add-terms L1 (negate-terms L2)))
+
+  (define (mul-terms L1 L2)
+    (if (empty-termlist? L1)
+      (the-empty-termlist)
+      (add-terms
+        (mul-term-by-all-terms
+          (first-term L1) L2)
+        (mul-terms (rest-terms L1) L2))))
+
+  (define (mul-term-by-all-terms t1 L)
+    (if (empty-termlist? L)
+      (the-empty-termlist)
+      (let ((t2 (first-term L)))
+        (adjoin-term
+          (make-term
+            (+ (order t1) (order t2))
+            (mul (coeff t1) (coeff t2)))
+          (mul-term-by-all-terms
+            t1
+            (rest-terms L))))))
+
+  (define (add-poly p1 p2)
+    (if (same-variable? (variable p1)
+                        (variable p2))
+      (make-poly
+        (variable p1)
+        (add-terms (term-list p1)
+                   (term-list p2)))
+      (error "Polys not in same var:
+             ADD-POLY"
+             (list p1 p2))))
+
+  (define (sub-poly p1 p2)
+    (if (same-variable? (variable p1)
+                        (variable p2))
+      (make-poly
+        (variable p1)
+        (sub-terms (term-list p1)
+                   (term-list p2)))
+      (error "Polys not in same var: SUB-POLY"
+             (list p1 p2))))
+
+  (define (mul-poly p1 p2)
+    (if (same-variable? (variable p1)
+                        (variable p2))
+      (make-poly
+        (variable p1)
+        (mul-terms (term-list p1)
+                   (term-list p2)))
+      (error "Polys not in same var:
+             MUL-POLY"
+             (list p1 p2))))
+
+  ;; interface to rest of the system
+  (define (tag p) (attach-tag 'dense-poly p))
+  (put 'add '(dense-poly dense-poly)
+       (lambda (p1 p2)
+         (tag (add-poly p1 p2))))
+  (put 'sub '(dense-poly dense-poly)
+       (lambda (p1 p2)
+         (tag (sub-poly p1 p2))))
+  (put 'mul '(dense-poly dense-poly)
+       (lambda (p1 p2)
+         (tag (mul-poly p1 p2))))
+  (put 'make 'dense-poly
+       (lambda (var coeffs)
+         (tag (make-poly var coeffs))))
+  (put 'equ? '(dense-poly dense-poly)
+       equal?)
+  (put 'equ? '(dense-poly scheme-number)
+       equ-poly-num)
+  (put 'equ? '(scheme-number dense-poly)
+       (swap-args equ-poly-num))
+  (put 'equ? '(dense-poly rational)
+       equ-poly-num)
+  (put 'equ? '(rational dense-poly)
+       (swap-args equ-poly-num))
+  (put 'equ? '(dense-poly integer)
+       equ-poly-num)
+  (put 'equ? '(integer dense-poly)
+       (swap-args equ-poly-num))
+  'done)
+
+(define (make-dense-poly var coeffs)
+  ((get 'make 'dense-poly) var coeffs))
+
+; sparse
+
+(define (install-sparse-poly-package)
   (define (swap-args fun)
     (lambda (a b) (fun b a)))
   ;; internal procedures
@@ -511,35 +682,77 @@
              (list p1 p2))))
 
   ;; interface to rest of the system
-  (define (tag p) (attach-tag 'polynomial p))
-  (put 'add '(polynomial polynomial)
+  (define (tag p) (attach-tag 'sparse-poly p))
+  (put 'add '(sparse-poly sparse-poly)
        (lambda (p1 p2)
          (tag (add-poly p1 p2))))
-  (put 'sub '(polynomial polynomial)
+  (put 'sub '(sparse-poly sparse-poly)
        (lambda (p1 p2)
          (tag (sub-poly p1 p2))))
-  (put 'mul '(polynomial polynomial)
+  (put 'mul '(sparse-poly sparse-poly)
        (lambda (p1 p2)
          (tag (mul-poly p1 p2))))
-  (put 'make 'polynomial
+  (put 'make 'sparse-poly
        (lambda (var terms)
          (tag (make-poly var terms))))
-  (put 'equ? '(polynomial scheme-number)
+  (put 'equ? '(sparse-poly sparse-poly)
+       equal?)
+  (put 'equ? '(sparse-poly scheme-number)
        equ-poly-num)
-  (put 'equ? '(scheme-number polynomial)
+  (put 'equ? '(scheme-number sparse-poly)
        (swap-args equ-poly-num))
-  (put 'equ? '(polynomial rational)
+  (put 'equ? '(sparse-poly rational)
        equ-poly-num)
-  (put 'equ? '(rational polynomial)
+  (put 'equ? '(rational sparse-poly)
        (swap-args equ-poly-num))
-  (put 'equ? '(polynomial integer)
+  (put 'equ? '(sparse-poly integer)
        equ-poly-num)
-  (put 'equ? '(integer polynomial)
+  (put 'equ? '(integer sparse-poly)
        (swap-args equ-poly-num))
-  'done)
 
-(define (make-polynomial var terms)
-  ((get 'make 'polynomial) var terms))
+
+  ; dense / sparse interplay: convert everything to sparse, so convenient to
+  ; put in the sparse package
+  (define (dense->sparse p)
+    ; Note: make-poly, not make-sparse-poly -- want the internal version that
+    ; does not attach a type-tag
+    (make-poly
+      (variable p)
+      ; sparse term-lists only have non-zero coefficients
+      (filter (lambda (term)
+                (not (equ? 0 (cadr term))))
+              (map (lambda (coefficient order)
+                     (list coefficient order))
+                   ; term is '(order coefficient)
+                   (reverse (range (length (term-list p))))
+                   (term-list p)))))
+
+  (put 'equ? '(dense-poly sparse-poly)
+       ; nb: can't use equ? here as d and s are type-tagless
+       (lambda (d s) (equal? s (dense->sparse d))))
+  (put 'equ? '(sparse-poly dense-poly)
+       (lambda (s d) (equal? s (dense->sparse d))))
+  (put 'add '(dense-poly sparse-poly)
+       (lambda (d s)
+         (tag (add-poly s (dense->sparse d)))))
+  (put 'add '(sparse-poly dense-poly)
+       (lambda (s d)
+         (tag (add-poly s (dense->sparse d)))))
+  (put 'sub '(dense-poly sparse-poly)
+       (lambda (d s)
+         (tag (sub-poly (dense->sparse d) s))))
+  (put 'sub '(sparse-poly dense-poly)
+       (lambda (s d)
+         (tag (sub-poly s (dense->sparse d)))))
+  (put 'mul '(dense-poly sparse-poly)
+       (lambda (d s)
+         (tag (mul-poly s (dense->sparse d)))))
+  (put 'mul '(sparse-poly dense-poly)
+       (lambda (s d)
+         (tag (mul-poly s (dense->sparse d))))))
+
+(define (make-sparse-poly var terms)
+  ((get 'make 'sparse-poly) var terms))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;    INSTALL PACKAGES    ;;
@@ -552,5 +765,6 @@
 (install-rectangular-package)
 (install-polar-package)
 (install-equality-package)
-(install-polynomial-package)
 (install-raise-package)
+(install-dense-poly-package)
+(install-sparse-poly-package)
