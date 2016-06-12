@@ -64,24 +64,19 @@
   ; tests if one is higher than two
   (define (higher-than? one two)
     (define raise-two (get 'raise (list (type-tag two))))
-    (cond ((null? raise-two) #f)
+    ; special-case polynomials; they're not part of the number heirarchy
+    (cond ((polynomial? one) #t)
+          ((null? raise-two) #f)
           ((eq? (type-tag one) (type-tag (raise-two (contents two)))) #t)
           (else (higher-than? one (raise-two (contents two)))))) ; recurse
 
   ;(define (highest-type-in-args) (car (sort args higher-than)))
   ; technically that was cheating as haven't done sort in sicp yet...
-  (define (highest-type-in-args)
-    (type-tag (foldl (lambda (x acc)
-                       (if (or (null? acc) (higher-than? x acc))
-                         x
-                         acc)) '() args)))
-
-  ; Assumes that (raise-to from to-type) will only be called if from is
-  ; raisable to to-type (true for its use here since confirmed by higher-than)
-  (define (raise-to from to-type)
-    (if (eq? (type-tag from) to-type)
-      from
-      (raise-to (raise from) to-type)))
+  (define (highest-arg)
+    (foldl (lambda (x acc)
+             (if (or (null? acc) (higher-than? x acc))
+                 x
+                 acc)) '() args))
 
   (define type-tags (map type-tag args))
 
@@ -100,13 +95,27 @@
     (cond ((apply alleqv? type-tags)
            (error "No method for these types" (list op type-tags)))
           (else
-            (define to-type (highest-type-in-args))
+           (define to-arg (highest-arg))
+           (define to-type (type-tag to-arg))
+
+            ; Use an internal define so that for poly's, can coerce to the right var
+            ; Assumes that (raise-to from to-type) will only be called if from is
+            ; raisable to to-type (true for its use here since confirmed by higher-than)
+            (define (raise-to from to-type)
+              (cond ((eq? (type-tag from) to-type)
+                     from)
+                    ((eq? to-type 'sparse-poly)
+                     (make-sparse-poly (car (contents to-arg)) (list (list 0 from))))
+                    (else (raise-to (raise from) to-type))))
+
             (define raised-args
               (map (lambda (from)
                      (raise-to from to-type))
                    args))
+
             (define result
               (apply apply-generic (cons op raised-args)))
+
             (if (null? result)
               (error "No method for these types" (list op type-tags))
               (conditional-drop result))))))
@@ -672,16 +681,34 @@
                     (remainder (cadr rest-of-result)))
                 (list quotient remainder))))))))
 
+  ; Defines an arbitrary variable ordering to get
+  ; consistency in polynomial variable coercion.
+  ; symbol<? uses unicode codepoint order
+  (define (choose-variable a b)
+    (if (symbol<? a b)
+        a
+        b))
+
+  (define (coerce-to-var poly var)
+    (if (equal? var (variable poly))
+        poly
+        (make-poly var (list (list 0 (tag poly))))))
+
   (define (add-poly p1 p2)
-    (if (same-variable? (variable p1)
-                        (variable p2))
-      (make-poly
-        (variable p1)
-        (add-terms (term-list p1)
-                   (term-list p2)))
-      (error "Polys not in same var:
-             ADD-POLY"
-             (list p1 p2))))
+    (cond ((same-variable? (variable p1)
+                           (variable p2))
+           (make-poly
+            (variable p1)
+            (add-terms (term-list p1)
+                       (term-list p2))))
+          (else
+           (define final-var
+             (choose-variable (variable p1)
+                              (variable p2)))
+           (make-poly
+            final-var
+            (add-terms (term-list (coerce-to-var p1 final-var))
+                       (term-list (coerce-to-var p2 final-var)))))))
 
   (define (sub-poly p1 p2)
     (if (same-variable? (variable p1)
@@ -694,20 +721,25 @@
              (list p1 p2))))
 
   (define (mul-poly p1 p2)
-    (if (same-variable? (variable p1)
-                        (variable p2))
-      (make-poly
-        (variable p1)
-        (mul-terms (term-list p1)
-                   (term-list p2)))
-      (error "Polys not in same var:
-             MUL-POLY"
-             (list p1 p2))))
+    (cond ((same-variable? (variable p1)
+                           (variable p2))
+           (make-poly
+            (variable p1)
+            (mul-terms (term-list p1)
+                       (term-list p2))))
+          (else
+           (define final-var
+             (choose-variable (variable p1)
+                              (variable p2)))
+           (make-poly
+            final-var
+            (mul-terms (term-list (coerce-to-var p1 final-var))
+                       (term-list (coerce-to-var p2 final-var)))))))
 
   (define (div-poly dividend divisor)
     (cond ((same-variable? (variable dividend)
                            (variable divisor))
-           (define result 
+           (define result
              (div-terms (term-list dividend)
                         (term-list divisor)))
            (define quotient (car result))
@@ -794,9 +826,11 @@
 (define (make-sparse-poly var terms)
   ((get 'make 'sparse-poly) var terms))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;    INSTALL PACKAGES    ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (polynomial? p)
+  (or (equal? 'sparse-poly (type-tag p))
+      (equal? 'dense-poly (type-tag p))))
+
+
 
 (install-project-package)
 (install-scheme-number-package)

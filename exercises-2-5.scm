@@ -515,3 +515,56 @@
                                   (car rest-of-result)))
                   (remainder (cdr rest-of-result)))
               (cons quotient remainder))))))))
+
+; 2.92
+
+; As well as the below, needed some changes to type dispatching for this to
+; work: needed raise-to to raise numbers to polynomials of the 'right'
+; variable. So special-cases polynomials, which is a bit messy. See
+; polynomials.rkt
+
+; Defines an arbitrary variable ordering to get
+; consistency in polynomial variable coercion.
+; symbol<? uses unicode codepoint order
+(define (choose-variable a b)
+  (if (symbol<? a b)
+      a
+      b))
+
+(define (coerce-to-var poly var)
+  (if (equal? var (variable poly))
+      poly
+      (make-poly var (list (list 0 (tag poly))))))
+
+(define (add-poly p1 p2)
+  (cond ((same-variable? (variable p1)
+                         (variable p2))
+         (make-poly
+          (variable p1)
+          (add-terms (term-list p1)
+                     (term-list p2))))
+        (else
+         (define final-var
+           (choose-variable (variable p1)
+                            (variable p2)))
+         (make-poly
+          final-var
+          (add-terms (term-list (coerce-to-var p1 final-var))
+                     (term-list (coerce-to-var p2 final-var)))))))
+
+
+(define (mul-poly p1 p2)
+  (cond ((same-variable? (variable p1)
+                         (variable p2))
+         (make-poly
+           (variable p1)
+           (mul-terms (term-list p1)
+                      (term-list p2))))
+        (else
+          (define final-var
+            (choose-variable (variable p1)
+                             (variable p2)))
+          (make-poly
+            final-var
+            (mul-terms (term-list (coerce-to-var p1 final-var))
+                       (term-list (coerce-to-var p2 final-var)))))))
