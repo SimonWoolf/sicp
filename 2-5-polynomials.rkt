@@ -843,5 +843,75 @@
 (install-dense-poly-package)
 (install-sparse-poly-package)
 
-(define example-poly-a (make-sparse-poly 'x '((5 1) (0 -1))))
-(define example-poly-b (make-sparse-poly 'x '((2 1) (0 -1))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;         TESTS          ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(require rackunit)
+
+(test-case
+ "Adding polys of same var"
+ (check-equal?
+  (add (make-sparse-poly 'x '((5 1) (1 3)))
+       (make-sparse-poly 'x '((4 2) (1 -2))))
+  (make-sparse-poly 'x '((5 1) (4 2) (1 1)))))
+
+(test-case
+ "Dividing polys of same var"
+ (check-equal?
+  (div (make-sparse-poly 'x '((5 1) (0 -1)))
+       (make-sparse-poly 'x '((2 1) (0 -1))))
+  (list (make-sparse-poly 'x '((3 1) (1 1))) (make-sparse-poly 'x '((1 1) (0 -1))))))
+
+(test-case
+ "Adding polys of different vars simple"
+ (check-equal?
+  (add (make-sparse-poly 'x '((5 1) (1 3)))
+       (make-sparse-poly 'y '((4 2) (1 -2))))
+  (make-sparse-poly 'x `((5 1) (1 3) (0 ,(make-sparse-poly 'y '((4 2) (1 -2))))))))
+
+(test-case
+ "Adding mixed polys of different vars"
+ (define simple-poly-x (make-sparse-poly 'x '((2 3) (1 2) (0 1))))
+ (define simple-poly-y (make-sparse-poly 'y '((3 5) (2 4) (0 -3))))
+ (define mixed-poly-separable (add simple-poly-x simple-poly-y))
+ (define mixed-poly-inseparable (make-sparse-poly 'x `((1 ,simple-poly-y))))
+ (check-equal?
+  (add mixed-poly-separable mixed-poly-separable)
+  (make-sparse-poly 'x `((2 6) (1 4) (0 ,(make-sparse-poly 'y '((3 10) (2 8) (0 -4)))))))
+ (check-equal?
+  (add mixed-poly-inseparable simple-poly-x)
+  (make-sparse-poly 'x `((2 3) (1 ,(make-sparse-poly 'y '((3 5) (2 4) (0 -1)))) (0 1))))
+ (check-equal?
+  (add mixed-poly-inseparable mixed-poly-inseparable)
+  (make-sparse-poly 'x `((1 ,(make-sparse-poly 'y '((3 10) (2 8) (0 -6))))))))
+
+(test-case
+ "Multiplying polys of same var"
+ (check-equal?
+  (mul (make-sparse-poly 'x '((5 1) (0 -1)))
+       (make-sparse-poly 'x '((2 1) (0 -1))))
+  (make-sparse-poly 'x '((7 1) (5 -1) (2 -1) (0 1)))))
+
+(test-case
+ "Multiplying polys of different vars"
+ (check-equal?
+  (mul (make-sparse-poly 'x '((2 1) (1 3) (0 4)))
+       (make-sparse-poly 'y '((4 2) (1 -2) (0 -3))))
+  (make-sparse-poly 'x `((2 ,(make-sparse-poly 'y '((4 2) (1 -2) (0 -3))))
+                        (1 ,(make-sparse-poly 'y '((4 6) (1 -6) (0 -9))))
+                        (0 ,(make-sparse-poly 'y '((4 8) (1 -8) (0 -12))))))))
+
+(test-case
+ "Multiplying mixed polys of different vars"
+ (define simple-poly-x (make-sparse-poly 'x '((1 1) (0 1))))
+ (define simple-poly-y (make-sparse-poly 'y '((1 3) (0 -3))))
+ (define mixed-poly-separable (add simple-poly-x simple-poly-y))
+ (define mixed-poly-inseparable (make-sparse-poly 'x `((1 ,simple-poly-y))))
+ (check-equal?
+  (mul mixed-poly-separable mixed-poly-separable)
+  (make-sparse-poly 'x `((2 1) (1 ,(make-sparse-poly 'y '((1 6) (0 -4)))) (0 ,(make-sparse-poly 'y '((2 9) (1 -12) (0 4)))))))
+ (check-equal?
+  (mul mixed-poly-inseparable mixed-poly-inseparable)
+  (make-sparse-poly 'x `((2 ,(make-sparse-poly 'y '((2 9) (1 -18) (0 9))))))))

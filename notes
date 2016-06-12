@@ -197,6 +197,9 @@ memq - member eq - uses eq? to compare
 Quoting:
 '(a b c) is equivalent to (list 'a 'b 'c)
 
+to unquote, use quasiquoting:
+`(a 1 ,(+ 2 3)) ; => '(a 1 5)
+
 Debugging in racket
 ===================
 (displayln ...)
@@ -215,3 +218,11 @@ get and put helpers in racket
 
 (define (get op type)
   (hash-ref *op-table* (list op type) '()))
+
+testing
+=======
+(require rackunit)
+
+(test-case
+ "Test name"
+ (check-equal? (function 1) result))
