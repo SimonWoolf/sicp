@@ -568,3 +568,39 @@
             final-var
             (mul-terms (term-list (coerce-to-var p1 final-var))
                        (term-list (coerce-to-var p2 final-var)))))))
+
+; 2.93
+; see 2-5-polynomials.rkt for modified rat package
+
+> (add rf rf)
+'(rational (sparse-poly x (5 2) (3 2) (2 2) (0 2)) sparse-poly x (4 1) (2 2) (0 1))
+
+; 2.94
+
+(define (remainder-terms dividend divisor)
+  (cadr (div-terms dividend divisor)))
+
+(define (gcd-terms a b)
+  (if (empty-termlist? b)
+    a
+    (gcd-terms b (remainder-terms a b))))
+
+(define (gcd-poly p1 p2)
+  (if (same-variable? (variable p1)
+                      (variable p2))
+    (make-poly
+      (variable p1)
+      (gcd-terms (term-list p1)
+                 (term-list p2)))
+    (error "Polys not in same var: GCD-POLY"
+           (list p1 p2))))
+
+; > (greatest-common-divisor p1 p2)
+; '(x (2 -1) (1 1))
+
+; This is correct, x^3 - 1 = -(x - x^2)(1 + x)
+
+; 2.95
+(define p1 (make-polynomial 'x '((2 1) (1 -2) (0 1))))
+(define p2 (make-polynomial 'x '((2 11) (0 7))))
+(define p3 (make-polynomial 'x '((1 13) (0 5))))

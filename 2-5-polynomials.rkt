@@ -52,12 +52,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (apply-generic op . args)
-  (displayln (list "apply-generic" op args))
+  ;(displayln (list "apply-generic" op args))
 
   (define (conditional-drop result)
-    ; Don't try and drop polynomials, limit to number tower
+    (define numer car)
+    (define denom cdr)
     (if (or (memq op '(raise project equ? make))
-            (memq (type-tag result) '(dense-poly sparse-poly)))
+            ; Don't try and drop polynomials, limit to number tower
+            (memq (type-tag result) '(dense-poly sparse-poly))
+            ; Similarly don't try and drop rationals of polynomials
+            (and (eq? 'rational (type-tag result))
+                 (or (polynomial? (numer (contents result)))
+                     (polynomial? (denom (contents result))))))
       result
       (drop result)))
 
@@ -125,6 +131,8 @@
 (define (mul x y) (apply-generic 'mul x y))
 (define (div x y) (apply-generic 'div x y))
 (define (make x) (apply-generic 'make x))
+(define (greatest-common-divisor x y)
+  (apply-generic 'greatest-common-divisor x y))
 (define (real-part z)
   (apply-generic 'real-part z))
 (define (imag-part z)
@@ -288,6 +296,8 @@
        (lambda (x y) (tag (round (/ x y)))))
   (put 'make 'integer
        (lambda (x) (tag (inexact->exact (round x)))))
+  (put 'greatest-common-divisor '(integer integer)
+       (lambda (x y) (tag (gcd x y))))
   'done)
 
 (define (make-integer n)
@@ -300,23 +310,26 @@
 (define (install-rational-package)
   (define numer car)
   (define denom cdr)
+  ; For dividing polynomials
+  ;(define (make-rat n d)
+    ;(let ((g (gcd n d)))
+      ;(cons (/ n g) (/ d g))))
   (define (make-rat n d)
-    (let ((g (gcd n d)))
-      (cons (/ n g) (/ d g))))
+    (cons n d))
   (define (add-rat x y)
-    (make-rat (+ (* (numer x) (denom y))
-                 (* (numer y) (denom x)))
-              (* (denom x) (denom y))))
+    (make-rat (add (mul (numer x) (denom y))
+                   (mul (numer y) (denom x)))
+              (mul (denom x) (denom y))))
   (define (sub-rat x y)
-    (make-rat (- (* (numer x) (denom y))
-                 (* (numer y) (denom x)))
-              (* (denom x) (denom y))))
+    (make-rat (sub (mul (numer x) (denom y))
+                   (mul (numer y) (denom x)))
+              (mul (denom x) (denom y))))
   (define (mul-rat x y)
-    (make-rat (* (numer x) (numer y))
-              (* (denom x) (denom y))))
+    (make-rat (mul (numer x) (numer y))
+              (mul (denom x) (denom y))))
   (define (div-rat x y)
-    (make-rat (* (numer x) (denom y))
-              (* (denom x) (numer y))))
+    (make-rat (mul (numer x) (denom y))
+              (mul (denom x) (numer y))))
   ;; interface to rest of the system
   (define (tag x) (attach-tag 'rational x))
   (put 'add '(rational rational)
@@ -749,6 +762,25 @@
                  (make-poly var remainder)))
           (else (error "Polys not in same var: DIV-POLY" (list dividend divisor)))))
 
+  (define (remainder-terms dividend divisor)
+    (cadr (div-terms dividend divisor)))
+
+  (define (gcd-terms a b)
+    (if (empty-termlist? b)
+      a
+      (gcd-terms b (remainder-terms a b))))
+
+  (define (gcd-poly p1 p2)
+    (if (same-variable? (variable p1)
+                        (variable p2))
+      (make-poly
+        (variable p1)
+        (gcd-terms (term-list p1)
+                   (term-list p2)))
+      (error "Polys not in same var: GCD-POLY"
+             (list p1 p2))))
+
+
   ;; interface to rest of the system
   (define (tag p) (attach-tag 'sparse-poly p))
   (put 'add '(sparse-poly sparse-poly)
@@ -767,6 +799,9 @@
   (put 'make 'sparse-poly
        (lambda (var terms)
          (tag (make-poly var terms))))
+  (put 'greatest-common-divisor '(sparse-poly sparse-poly)
+       (lambda (p1 p2)
+         (tag (gcd-poly p1 p2))))
   (put 'equ? '(sparse-poly sparse-poly)
        equal?)
   (put 'equ? '(sparse-poly scheme-number)
@@ -825,6 +860,9 @@
 
 (define (make-sparse-poly var terms)
   ((get 'make 'sparse-poly) var terms))
+
+; default to sparse polynomials
+(define make-polynomial make-sparse-poly)
 
 (define (polynomial? p)
   (or (equal? 'sparse-poly (type-tag p))
