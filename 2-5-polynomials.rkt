@@ -762,13 +762,28 @@
                  (make-poly var remainder)))
           (else (error "Polys not in same var: DIV-POLY" (list dividend divisor)))))
 
-  (define (remainder-terms dividend divisor)
-    (cadr (div-terms dividend divisor)))
+  (define (pseudoremainder-terms dividend divisor)
+    (define integerizing-factor
+      (expt (coeff (car divisor))
+            (+ 1 (order (car dividend)) (- (order (car divisor))))))
+    (define new-dividend
+      (mul-terms dividend `((0 ,integerizing-factor))))
+    (displayln `(old ,dividend new ,new-dividend))
+    (cadr (div-terms new-dividend divisor)))
+
+  (define (extract-coeffs term-list)
+    (map (match-lambda [(list order coeff) coeff])
+         term-list))
+
+  (define (remove-common-factors-terms poly)
+    (define hcf (apply gcd (extract-coeffs poly)))
+    (displayln `(removing common factor ,hcf from ,poly result: ,(div-terms poly `((0 ,hcf)))))
+    (car (div-terms poly `((0 ,hcf)))))
 
   (define (gcd-terms a b)
     (if (empty-termlist? b)
-      a
-      (gcd-terms b (remainder-terms a b))))
+      (remove-common-factors-terms a)
+      (gcd-terms b (pseudoremainder-terms a b))))
 
   (define (gcd-poly p1 p2)
     (if (same-variable? (variable p1)
@@ -953,3 +968,15 @@
  (check-equal?
   (mul mixed-poly-inseparable mixed-poly-inseparable)
   (make-sparse-poly 'x `((2 ,(make-sparse-poly 'y '((2 9) (1 -18) (0 9))))))))
+
+
+(test-case
+ "Greatest common divisor for polynomials"
+ (define p1 (make-polynomial 'x '((2 1) (1 -2) (0 1))))
+ (define p2 (make-polynomial 'x '((2 11) (0 7))))
+ (define p3 (make-polynomial 'x '((1 13) (0 5))))
+ (define q1 (mul p1 p2))
+ (define q2 (mul p1 p3))
+ (check-equal?
+  (greatest-common-divisor q1 q2)
+  (make-polynomial 'x '((2 1) (1 -2) (0 1)))))

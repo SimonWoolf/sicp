@@ -604,3 +604,53 @@
 (define p1 (make-polynomial 'x '((2 1) (1 -2) (0 1))))
 (define p2 (make-polynomial 'x '((2 11) (0 7))))
 (define p3 (make-polynomial 'x '((1 13) (0 5))))
+(define q1 (mul p1 p2))
+(define q2 (mul p1 p3))
+
+;> q1
+;'(sparse-poly x (4 11) (3 -22) (2 18) (1 -14) (0 7))
+;> q2
+;'(sparse-poly x (3 13) (2 -21) (1 3) (0 5))
+
+;(greatest-common-divisor q1 q2) ; =>
+;'(gcd-terms ((4 11) (3 -22) (2 18) (1 -14) (0 7)) ((3 13) (2 -21) (1 3) (0 5)))
+;'(div-terms ((4 11) (3 -22) (2 18) (1 -14) (0 7)) ((3 13) (2 -21) (1 3) (0 5)))
+;'(div-terms ((4 -2) (3 -1) (2 15) (1 -19) (0 7)) ((3 13) (2 -21) (1 3) (0 5)))
+;'(div-terms ((4 -2) (3 -1) (2 15) (1 -19) (0 7)) ((3 13) (2 -21) (1 3) (0 5)))
+; ...
+
+; An infinite loop. div-terms is calculating the new coefficient of each term as
+(div (coeff t1) (coeff t2))
+; which, as t1 and t2 are racket native integers, returns an integer (ie any
+; fractional part truncated).
+
+; 2.96
+; 1
+(define (pseudoremainder-terms dividend divisor)
+  (define integerizing-factor
+    (expt (coeff (car divisor))
+          (+ 1 (order (car dividend)) (- (order (car divisor))))))
+  (define new-dividend
+    (mul-terms dividend `((0 ,integerizing-factor))))
+  (cadr (div-terms new-dividend divisor)))
+
+;> (greatest-common-divisor q1 q2)
+;'(sparse-poly x (2 1458) (1 -2916) (0 1458))
+
+; 2
+(define (extract-coeffs term-list)
+  (map (match-lambda [(list order coeff) coeff])
+       term-list))
+
+(define (remove-common-factors-terms poly)
+  (define hcf (apply gcd (extract-coeffs poly)))
+  (displayln `(removing common factor ,hcf from ,poly result: ,(div-terms poly `((0 ,hcf)))))
+  (div-terms poly `((0 ,hcf))))
+
+(define (gcd-terms a b)
+  (if (empty-termlist? b)
+    (remove-common-factors-terms a)
+    (gcd-terms b (pseudoremainder-terms a b))))
+
+;> (greatest-common-divisor q1 q2)
+;'(sparse-poly x ((2 1) (1 -2) (0 1)) ())

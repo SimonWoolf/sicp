@@ -137,6 +137,9 @@ useful procedures:
 dotted-tail notation - (define (g f . w) (...))
 is like def g(f, *w)
 
+to do the opposite (splat an array into arguments), use apply
+eg (apply gcd '(5 10 15))
+
 -------
 
 Map, filter, accumulate -- the operator is the first argment, then initial (for acc), then last is the sequence.
