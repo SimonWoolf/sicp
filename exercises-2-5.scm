@@ -654,3 +654,27 @@
 
 ;> (greatest-common-divisor q1 q2)
 ;'(sparse-poly x ((2 1) (1 -2) (0 1)) ())
+
+; 2.97
+(define (reduce-terms n d)
+  (define gcd (gcd-terms n d))
+  (define integerizing-factor
+    (expt (coeff (car gcd))
+          (+ 1 (max (order (car d))
+                    (order (car n)))
+             (- (order (car gcd))))))
+  (define if-term `((0 ,integerizing-factor)))
+  (list (quotient-from-div-terms (div-terms n if-term))
+        (quotient-from-div-terms (div-terms d if-term))))
+
+(define (reduce-poly p1 p2)
+  (if (same-variable? (variable p1)
+                      (variable p2))
+    (make-poly
+      (variable p1)
+      (reduce-terms (term-list p1)
+                    (term-list p2)))
+    (error "Polys not in same var: REDUCE-POLY"
+           (list p1 p2))))
+
+

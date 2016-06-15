@@ -133,6 +133,8 @@
 (define (make x) (apply-generic 'make x))
 (define (greatest-common-divisor x y)
   (apply-generic 'greatest-common-divisor x y))
+(define (reduce x y)
+  (apply-generic 'reduce x y))
 (define (real-part z)
   (apply-generic 'real-part z))
 (define (imag-part z)
@@ -284,6 +286,9 @@
 
 ; actually just uses racket exact integers
 (define (install-integer-package)
+  (define (reduce-int n d)
+    (let ((g (gcd n d)))
+      (list (/ n g) (/ d g))))
   (define (tag x)
     (attach-tag 'integer x))
   (put 'add '(integer integer)
@@ -296,6 +301,8 @@
        (lambda (x y) (tag (round (/ x y)))))
   (put 'make 'integer
        (lambda (x) (tag (inexact->exact (round x)))))
+  (put 'reduce '(integer integer)
+       (lambda (x y) (tag (reduce-int x y))))
   (put 'greatest-common-divisor '(integer integer)
        (lambda (x y) (tag (gcd x y))))
   'done)
@@ -310,12 +317,10 @@
 (define (install-rational-package)
   (define numer car)
   (define denom cdr)
-  ; For dividing polynomials
-  ;(define (make-rat n d)
-    ;(let ((g (gcd n d)))
-      ;(cons (/ n g) (/ d g))))
   (define (make-rat n d)
-    (cons n d))
+    (define reduced (reduce n d))
+    ; reduce gives a list; we convert to a pair
+    (cons (car reduced) (cadr reduced)))
   (define (add-rat x y)
     (make-rat (add (mul (numer x) (denom y))
                    (mul (numer y) (denom x)))
@@ -694,6 +699,9 @@
                     (remainder (cadr rest-of-result)))
                 (list quotient remainder))))))))
 
+  (define quotient-from-div-terms car)
+  (define remainder-from-div-terms cadr)
+
   ; Defines an arbitrary variable ordering to get
   ; consistency in polynomial variable coercion.
   ; symbol<? uses unicode codepoint order
@@ -755,12 +763,20 @@
            (define result
              (div-terms (term-list dividend)
                         (term-list divisor)))
-           (define quotient (car result))
-           (define remainder (cadr result))
            (define var (variable dividend))
-           (list (make-poly var quotient)
-                 (make-poly var remainder)))
+           (list (make-poly var (quotient-from-div-terms result))
+                 (make-poly var (remainder-from-div-terms result))))
           (else (error "Polys not in same var: DIV-POLY" (list dividend divisor)))))
+
+  (define (reduce-poly p1 p2)
+    (if (same-variable? (variable p1)
+                        (variable p2))
+      (make-poly
+        (variable p1)
+        (reduce-terms (term-list p1)
+                      (term-list p2)))
+      (error "Polys not in same var: REDUCE-POLY"
+             (list p1 p2))))
 
   (define (pseudoremainder-terms dividend divisor)
     (define integerizing-factor
@@ -769,7 +785,7 @@
     (define new-dividend
       (mul-terms dividend `((0 ,integerizing-factor))))
     (displayln `(old ,dividend new ,new-dividend))
-    (cadr (div-terms new-dividend divisor)))
+    (remainder-from-div-terms (div-terms new-dividend divisor)))
 
   (define (extract-coeffs term-list)
     (map (match-lambda [(list order coeff) coeff])
@@ -778,7 +794,7 @@
   (define (remove-common-factors-terms poly)
     (define hcf (apply gcd (extract-coeffs poly)))
     (displayln `(removing common factor ,hcf from ,poly result: ,(div-terms poly `((0 ,hcf)))))
-    (car (div-terms poly `((0 ,hcf)))))
+    (quotient-from-div-terms (div-terms poly `((0 ,hcf)))))
 
   (define (gcd-terms a b)
     (if (empty-termlist? b)
@@ -795,6 +811,16 @@
       (error "Polys not in same var: GCD-POLY"
              (list p1 p2))))
 
+  (define (reduce-terms n d)
+    (define gcd (gcd-terms n d))
+    (define integerizing-factor
+      (expt (coeff (car gcd))
+            (+ 1 (max (order (car d))
+                      (order (car n)))
+               (- (order (car gcd))))))
+    (define if-term `((0 ,integerizing-factor)))
+    (list (quotient-from-div-terms (div-terms n if-term))
+          (quotient-from-div-terms (div-terms d if-term))))
 
   ;; interface to rest of the system
   (define (tag p) (attach-tag 'sparse-poly p))
@@ -817,6 +843,9 @@
   (put 'greatest-common-divisor '(sparse-poly sparse-poly)
        (lambda (p1 p2)
          (tag (gcd-poly p1 p2))))
+  (put 'reduce '(sparse-poly sparse-poly)
+       (lambda (p1 p2)
+         (tag (reduce-poly p1 p2))))
   (put 'equ? '(sparse-poly sparse-poly)
        equal?)
   (put 'equ? '(sparse-poly scheme-number)
